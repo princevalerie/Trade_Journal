@@ -995,18 +995,4 @@ void OnTimer()
    }
    UpdateDashboard();
 }
-
-//+------------------------------------------------------------------+
-//| Chart Event Handler                                              |
-//+------------------------------------------------------------------+
-void OnChartEvent(const int id, const long &lparam, const double &dparam, const string &sparam)
-{
-   if(id == CHARTEVENT_OBJECT_CLICK && sparam == GUI_PREFIX + "BtnResync")
-   {
-      ObjectSetInteger(0, GUI_PREFIX + "BtnResync", OBJPROP_STATE, false);
-      Print("🔄 [TradeJournalSync] User clicked Force Full Resync button on chart!");
-      ForceFullResync();
-      ChartRedraw(0);
-   }
-}
 //+------------------------------------------------------------------+
