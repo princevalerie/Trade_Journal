@@ -410,9 +410,11 @@ string BuildAccountJson(datetime fromTime = 0)
    if(StringLen(name) == 0)
       name = StringFormat("[%s 1:%d] %s #%d", (modeStr == "real" ? "Real" : "Demo"), leverage, broker, login);
 
+   int historyTotal = OrdersHistoryTotal();
+
    return StringFormat(
-      "\"account\":{\"login\":%d,\"name\":\"%s\",\"broker\":\"%s\",\"currency\":\"%s\",\"balance\":%.2f,\"equity\":%.2f,\"floatingProfit\":%.2f,\"tradeMode\":\"%s\",\"leverage\":%d,\"positions\":%s,\"cashFlows\":%s}",
-      login, EscapeJson(name), EscapeJson(broker), curr, balance, equity, floatingProfit, modeStr, leverage, posJson, cashFlowsJson
+      "\"account\":{\"login\":%d,\"name\":\"%s\",\"broker\":\"%s\",\"currency\":\"%s\",\"balance\":%.2f,\"equity\":%.2f,\"floatingProfit\":%.2f,\"tradeMode\":\"%s\",\"leverage\":%d,\"historyTotal\":%d,\"positions\":%s,\"cashFlows\":%s}",
+      login, EscapeJson(name), EscapeJson(broker), curr, balance, equity, floatingProfit, modeStr, leverage, historyTotal, posJson, cashFlowsJson
    );
 }
 

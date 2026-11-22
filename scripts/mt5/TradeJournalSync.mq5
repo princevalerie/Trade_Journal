@@ -448,13 +448,19 @@ string BuildAccountJson(datetime fromTime = 0, datetime toTime = 0)
    datetime cfTo = (toTime > 0) ? toTime : TimeCurrent() + 86400;
    string cashFlowsJson = BuildCashFlowsJson(fromTime, cfTo);
 
+   int historyTotal = 0;
+   if(HistorySelect(0, TimeCurrent() + 86400))
+   {
+      historyTotal = HistoryDealsTotal();
+   }
+
    string name = InpAccountName;
    if(StringLen(name) == 0)
       name = StringFormat("[%s 1:%I64d] %s #%I64d", (modeStr == "real" ? "Real" : "Demo"), leverage, broker, login);
 
    return StringFormat(
-      "\"account\":{\"login\":%I64d,\"name\":\"%s\",\"broker\":\"%s\",\"currency\":\"%s\",\"balance\":%.2f,\"equity\":%.2f,\"floatingProfit\":%.2f,\"tradeMode\":\"%s\",\"leverage\":%I64d,\"positions\":%s,\"cashFlows\":%s}",
-      login, EscapeJson(name), EscapeJson(broker), curr, balance, equity, floatingProfit, modeStr, leverage, posJson, cashFlowsJson
+      "\"account\":{\"login\":%I64d,\"name\":\"%s\",\"broker\":\"%s\",\"currency\":\"%s\",\"balance\":%.2f,\"equity\":%.2f,\"floatingProfit\":%.2f,\"tradeMode\":\"%s\",\"leverage\":%I64d,\"historyTotal\":%d,\"positions\":%s,\"cashFlows\":%s}",
+      login, EscapeJson(name), EscapeJson(broker), curr, balance, equity, floatingProfit, modeStr, leverage, historyTotal, posJson, cashFlowsJson
    );
 }
 
@@ -963,25 +969,24 @@ void OnTimer()
    if(HistorySelect(fromTime, TimeCurrent() + 86400))
    {
       int total = HistoryDealsTotal();
-      if(total != g_last_history_total)
-      {
-         int scanLimit = MathMin(total, 50);
-         int startIdx = MathMax(0, total - scanLimit);
+      // Continuous two-way resync: include up to 100 recent deals on every heartbeat
+      // so any deleted or reset database records are automatically repopulated
+      int scanLimit = MathMin(total, 100);
+      int startIdx = MathMax(0, total - scanLimit);
 
-         for(int i = startIdx; i < total; i++)
+      for(int i = startIdx; i < total; i++)
+      {
+         ulong t = HistoryDealGetTicket(i);
+         if(t == 0) continue;
+         string dealJson = BuildDealJson(t);
+         if(StringLen(dealJson) > 0)
          {
-            ulong t = HistoryDealGetTicket(i);
-            if(t == 0) continue;
-            string dealJson = BuildDealJson(t);
-            if(StringLen(dealJson) > 0)
-            {
-               if(newDealsCount > 0) executionsJson += ",";
-               executionsJson += dealJson;
-               newDealsCount++;
-            }
+            if(newDealsCount > 0) executionsJson += ",";
+            executionsJson += dealJson;
+            newDealsCount++;
          }
-         g_last_history_total = total;
       }
+      g_last_history_total = total;
    }
 
    payload += ",\"executions\":[" + executionsJson + "]}";

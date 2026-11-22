@@ -1,6 +1,6 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { ImportedExecution } from "@luxalgo/journal-importers";
-import { accounts, attachments, db, tradeExcursions, trades } from "@/db";
+import { accounts, attachments, db, executions, tradeExcursions, trades } from "@/db";
 import { bad, handler, ok } from "@/server/api";
 import { insertExecutions } from "@/server/executions";
 import { newId, nowIso } from "@/server/ids";
@@ -41,6 +41,7 @@ export interface Mt4AccountPayload {
   initialBalance?: number;
   tradeMode?: "real" | "demo" | "contest";
   leverage?: number;
+  historyTotal?: number;
   positions?: Mt4OpenPosition[];
   cashFlows?: Mt4CashFlow[];
 }
@@ -620,9 +621,24 @@ export const POST = handler(
     }
   }
 
+  const dbCountResult = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(executions)
+    .where(eq(executions.accountId, accountId))
+    .get();
+  const dbExecutionsCount = Number(dbCountResult?.count) || 0;
+
   const globalResync = await getSetting("resync_cmd:all");
   const accountResync = await getSetting(`resync_cmd:${accountId}`);
-  const shouldResync = globalResync === "FORCE_RESYNC" || accountResync === "FORCE_RESYNC";
+  const historyMissing =
+    body.account.historyTotal !== undefined &&
+    body.account.historyTotal > 0 &&
+    dbExecutionsCount < body.account.historyTotal;
+
+  const shouldResync =
+    globalResync === "FORCE_RESYNC" ||
+    accountResync === "FORCE_RESYNC" ||
+    historyMissing;
 
   if (accountResync) {
     await deleteSetting(`resync_cmd:${accountId}`);
@@ -632,6 +648,7 @@ export const POST = handler(
     success: true,
     accountId,
     command: shouldResync ? "FORCE_RESYNC" : undefined,
+    dbExecutionsCount,
     result: insertResult,
     syncedAt: now,
   });
