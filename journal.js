@@ -399,6 +399,25 @@ function viewLogs() {
   });
 }
 
+// Start Cloudflare Tunnel
+function startTunnel() {
+  const exePath = path.join(PROJECT_ROOT, os.platform() === 'win32' ? 'cloudflared.exe' : 'cloudflared');
+  if (!fs.existsSync(exePath)) {
+    logInfo('cloudflared belum ditemukan. Menjalankan tunnel.bat untuk download otomatis...');
+    if (os.platform() === 'win32') {
+      execSync('tunnel.bat', { stdio: 'inherit' });
+      return;
+    }
+  }
+  logInfo('Menjalankan Cloudflare Tunnel ke port 3000...');
+  logInfo('Salin link https://xxxx.trycloudflare.com yang muncul di bawah:\n');
+  const p = spawn(exePath, ['tunnel', '--url', 'http://localhost:3000'], { stdio: 'inherit' });
+  process.on('SIGINT', () => {
+    p.kill();
+    process.exit(0);
+  });
+}
+
 // Show Menu TUI
 function showInteractiveMenu() {
   const status = getServerStatus();
@@ -421,12 +440,17 @@ function showInteractiveMenu() {
   console.log(`${colors.white}[7]${colors.reset} 💾 Backup Database`);
   console.log(`${colors.white}[8]${colors.reset} ♻️  Restore Database`);
   console.log(`${colors.white}[9]${colors.reset} 📜 Lihat Log Server`);
+  console.log(`${colors.white}[T]${colors.reset} 🌐 ${colors.cyan}${colors.bright}Buka Public Tunnel (Cloudflare - untuk MT4 VPS)${colors.reset}`);
   console.log(`${colors.white}[0]${colors.reset} ❌ Keluar\n`);
 
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  rl.question('Pilih nomor menu [0-9]: ', (choice) => {
+  rl.question('Pilih nomor menu: ', (choice) => {
     rl.close();
-    switch (choice.trim()) {
+    switch (choice.trim().toUpperCase()) {
+      case 'T':
+      case '10':
+        startTunnel();
+        break;
       case '1':
         startServer();
         break;
@@ -502,6 +526,9 @@ switch (command) {
   case 'logs':
   case 'log':
     viewLogs();
+    break;
+  case 'tunnel':
+    startTunnel();
     break;
   case 'status': {
     const s = getServerStatus();

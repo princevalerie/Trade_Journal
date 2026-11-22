@@ -31,3 +31,4 @@ backups/
 .DS_Store
 *.log
 coverage/
+cloudflared.exe
