@@ -1,4 +1,5 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import { APICallError, RetryError, generateText } from "ai";
 import { getAiKey, getAiModel, getAiProvider } from "./settings";
@@ -28,11 +29,15 @@ export const runAi = async (prompt: string, maxOutputTokens = 1200): Promise<str
   }
   const model = getAiModel(provider);
   try {
-    const result = await generateText({
-      model:
-        provider === "openai"
+    const selectedModel =
+      provider === "gemini"
+        ? createGoogleGenerativeAI({ apiKey })(model)
+        : provider === "openai"
           ? createOpenAI({ apiKey }).responses(model)
-          : createAnthropic({ apiKey })(model),
+          : createAnthropic({ apiKey })(model);
+
+    const result = await generateText({
+      model: selectedModel as any,
       ...(provider === "openai" ? { providerOptions: { openai: { store: false } } } : {}),
       system: SYSTEM,
       prompt,

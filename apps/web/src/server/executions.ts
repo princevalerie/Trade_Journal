@@ -38,7 +38,7 @@ export const executionProblem = (row: unknown, source: ExecutionSource): string 
   const meta = r.importMetadata;
   const metaOk =
     !meta ||
-    (source === "import" &&
+    ((source === "import" || source === "sync") &&
       typeof meta.id === "string" &&
       meta.id.length > 0 &&
       meta.id.length <= 2000 &&
@@ -111,6 +111,10 @@ export const insertExecutions = (
     for (const row of usable) {
       const id = newId();
       const contentHash = executionHash(row);
+      const feeVal = row.importMetadata?.preserveFee
+        ? row.fee
+        : defaultFee(row.fee, row.quantity, accountId, row.symbol, defaults);
+      const metaJson = row.importMetadata ? JSON.stringify(row.importMetadata) : null;
       const result = tx
         .insert(executions)
         .values({
@@ -120,17 +124,23 @@ export const insertExecutions = (
           side: row.side,
           quantity: row.quantity,
           price: row.price,
-          fee: row.importMetadata?.preserveFee
-            ? row.fee
-            : defaultFee(row.fee, row.quantity, accountId, row.symbol, defaults),
+          fee: feeVal,
           executedAt: row.executedAt,
           assetClass: row.assetClass ?? null,
           source,
-          importMetadataJson: row.importMetadata ? JSON.stringify(row.importMetadata) : null,
+          importMetadataJson: metaJson,
           contentHash,
           createdAt,
         })
-        .onConflictDoNothing()
+        .onConflictDoUpdate({
+          target: [executions.accountId, executions.contentHash],
+          set: {
+            fee: feeVal,
+            price: row.price,
+            quantity: row.quantity,
+            importMetadataJson: metaJson,
+          },
+        })
         .run();
       if (result.changes > 0) {
         inserted++;
@@ -149,7 +159,7 @@ export const insertExecutions = (
         }
       }
     }
-    if (inserted > 0) rebuildAccount(accountId);
+    if (inserted > 0 || (source === "sync" && usable.length > 0)) rebuildAccount(accountId);
     if (note) {
       const affected = tx
         .select({

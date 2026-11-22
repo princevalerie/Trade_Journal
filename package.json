@@ -20,7 +20,12 @@
     "test:watch": "vitest",
     "typecheck": "pnpm -r --parallel typecheck",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "desktop:dev": "pnpm --filter desktop dev",
+    "desktop:build:win": "pnpm --filter web build && pnpm --filter desktop pack:win",
+    "desktop:build:mac": "pnpm --filter web build && pnpm --filter desktop pack:mac",
+    "setup:sqlite": "node scripts/setup-sqlite.cjs",
+    "journal": "node journal.js"
   },
   "devDependencies": {
     "prettier": "^3.6.0",

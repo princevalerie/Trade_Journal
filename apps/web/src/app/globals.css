@@ -135,6 +135,47 @@
   ::selection {
     @apply bg-primary/20;
   }
+
+  /* ── Global Scrollbar Styling ── */
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  /* Webkit (Chrome, Edge, Electron) */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 999px;
+    transition: background 0.2s ease;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--muted-foreground);
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Hide scrollbar on very narrow elements, show on hover */
+  .scrollbar-hover {
+    scrollbar-width: none;
+  }
+  .scrollbar-hover::-webkit-scrollbar {
+    width: 0;
+  }
+  .scrollbar-hover:hover {
+    scrollbar-width: thin;
+  }
+  .scrollbar-hover:hover::-webkit-scrollbar {
+    width: 6px;
+  }
 }
 
 /* Numbers that must align vertically (tables, axis ticks). */

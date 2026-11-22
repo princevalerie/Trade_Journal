@@ -35,6 +35,7 @@ export function AccountSelector() {
     const next = new URLSearchParams(params.toString());
     if (id === "all") next.delete("accounts");
     else next.set("accounts", id);
+    next.delete("ea"); // Clear account-specific EA filter when switching accounts
     router.replace(`${pathname}?${next.toString()}`, { scroll: false });
   }
 

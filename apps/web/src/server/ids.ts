@@ -12,8 +12,23 @@ export const executionHash = (execution: {
   price: number;
   executedAt: string;
   importMetadata?: { id: string; group?: string };
-}): string =>
-  createHash("sha256")
+}): string => {
+  if (execution.importMetadata?.id) {
+    return createHash("sha256")
+      .update(
+        [
+          "meta_id",
+          execution.symbol,
+          execution.side,
+          execution.importMetadata.group ?? "",
+          execution.importMetadata.id,
+        ].join("|"),
+      )
+      .digest("hex")
+      .slice(0, 32);
+  }
+
+  return createHash("sha256")
     .update(
       [
         execution.symbol,
@@ -21,10 +36,8 @@ export const executionHash = (execution: {
         execution.quantity.toPrecision(12),
         execution.price.toPrecision(12),
         execution.executedAt,
-        ...(execution.importMetadata
-          ? ["history", execution.importMetadata.group ?? "", execution.importMetadata.id]
-          : []),
       ].join("|"),
     )
     .digest("hex")
     .slice(0, 32);
+};

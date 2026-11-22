@@ -129,4 +129,65 @@ describe("risk and filtering preserve the meaning of trade data", () => {
     expect(m.breakevens).toBe(1);
     expect(m.winRate).toBe(0);
   });
+  it("filters EA trades by magic number, bracket label, and comments across different trades of the same EA", () => {
+    const tradeBuy = {
+      ...sample(),
+      key: "t1",
+      annotations: { tags: ["EA", "Magic:12345", "Scalp_Buy"] },
+    };
+    const tradeSell = {
+      ...sample(),
+      key: "t2",
+      annotations: { tags: ["EA", "Magic:12345", "Scalp_Sell"] },
+    };
+    const tradeOtherEa = {
+      ...sample(),
+      key: "t3",
+      annotations: { tags: ["EA", "Magic:99999", "GridBot"] },
+    };
+    const tradeManual = {
+      ...sample(),
+      key: "t4",
+      annotations: { tags: ["Manual"] },
+    };
+
+    // Filter by magic:12345 matches both Scalp_Buy and Scalp_Sell trades of the same EA
+    expect(matchesFilters(tradeBuy, { ea: "magic:12345" })).toBe(true);
+    expect(matchesFilters(tradeSell, { ea: "magic:12345" })).toBe(true);
+    expect(matchesFilters(tradeOtherEa, { ea: "magic:12345" })).toBe(false);
+    expect(matchesFilters(tradeManual, { ea: "magic:12345" })).toBe(false);
+
+    // Filter by raw magic number
+    expect(matchesFilters(tradeBuy, { ea: "12345" })).toBe(true);
+    expect(matchesFilters(tradeSell, { ea: "12345" })).toBe(true);
+    expect(matchesFilters(tradeOtherEa, { ea: "12345" })).toBe(false);
+
+    // Filter by consolidated bracket format [12345] Scalp_Buy & Scalp_Sell
+    expect(matchesFilters(tradeBuy, { ea: "[12345] Scalp_Buy & Scalp_Sell" })).toBe(true);
+    expect(matchesFilters(tradeSell, { ea: "[12345] Scalp_Buy & Scalp_Sell" })).toBe(true);
+    expect(matchesFilters(tradeOtherEa, { ea: "[12345] Scalp_Buy & Scalp_Sell" })).toBe(false);
+
+    // Filter by MagicNumber#comment1#comment2 format (Magic number only matching)
+    expect(matchesFilters(tradeBuy, { ea: "12345#Scalp_Buy#Scalp_Sell" })).toBe(true);
+    expect(matchesFilters(tradeSell, { ea: "12345#Scalp_Buy#Scalp_Sell" })).toBe(true);
+    expect(matchesFilters(tradeOtherEa, { ea: "12345#Scalp_Buy#Scalp_Sell" })).toBe(false);
+    expect(matchesFilters(tradeManual, { ea: "12345#Scalp_Buy#Scalp_Sell" })).toBe(false);
+
+    // Trade with same magic but totally different new comment also matches as same EA unit!
+    const tradeDifferentComment = {
+      ...sample(),
+      key: "t5",
+      annotations: { tags: ["EA", "Magic:12345", "Completely_New_Comment_V3"] },
+    };
+    expect(matchesFilters(tradeDifferentComment, { ea: "12345#Scalp_Buy#Scalp_Sell" })).toBe(true);
+    expect(matchesFilters(tradeDifferentComment, { ea: "magic:12345" })).toBe(true);
+    expect(matchesFilters(tradeDifferentComment, { ea: "12345" })).toBe(true);
+
+    // Filter by executionType
+    expect(matchesFilters(tradeBuy, { executionType: "ea" })).toBe(true);
+    expect(matchesFilters(tradeManual, { executionType: "ea" })).toBe(false);
+    expect(matchesFilters(tradeManual, { executionType: "manual" })).toBe(true);
+    expect(matchesFilters(tradeBuy, { executionType: "manual" })).toBe(false);
+  });
 });
+

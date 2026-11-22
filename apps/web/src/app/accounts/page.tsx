@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { Archive, ArchiveRestore, RefreshCw, Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, RefreshCw, Trash2, RotateCcw } from "lucide-react";
 import { FilterBar } from "@/components/filter-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,7 @@ export default function AccountsPage() {
 function Accounts() {
   const { data, refresh } = useApi<{ accounts: AccountRow[] }>("/api/accounts");
   const [syncing, setSyncing] = useState<string | null>(null);
+  const [refreshingAll, setRefreshingAll] = useState(false);
 
   const action = async <T = unknown,>(id: string, body: Record<string, unknown>) => {
     const result = await postJson<T>(`/api/accounts/${id}/actions`, body);
@@ -68,9 +69,49 @@ function Accounts() {
     }
   };
 
+  const refreshAll = async () => {
+    const syncAccounts = data?.accounts.filter((a) => a.kind === "sync") ?? [];
+    if (syncAccounts.length === 0) return alert("No sync accounts (MT4/MT5) to refresh.");
+    setRefreshingAll(true);
+    let successCount = 0;
+    try {
+      for (const account of syncAccounts) {
+        try {
+          await action(account.id, { action: "sync" });
+          successCount++;
+        } catch (error) {
+          console.warn(`Could not refresh account ${account.name} (${account.id}):`, error);
+        }
+      }
+      refresh();
+      if (successCount > 0) {
+        alert(`✅ Refreshed ${successCount} sync account(s) successfully.`);
+      }
+    } finally {
+      setRefreshingAll(false);
+    }
+  };
+
+  const isMt4Mt5 = (account: AccountRow) =>
+    account.kind === "sync" ||
+    /mt4|metatrader 4/i.test(account.broker) ||
+    /mt5|metatrader 5/i.test(account.broker);
+
   return (
     <div>
       <FilterBar title="Accounts" />
+      <div className="flex flex-wrap items-center gap-2 px-4 pb-3">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={refreshingAll}
+          onClick={() => void refreshAll()}
+          className="gap-1.5"
+        >
+          <RotateCcw className={refreshingAll ? "animate-spin" : undefined} size={14} />
+          {refreshingAll ? "Refreshing All..." : "Refresh All MT4/MT5"}
+        </Button>
+      </div>
       <div className="grid gap-3 p-4 md:grid-cols-2">
         {data?.accounts.length === 0 && (
           <p className="col-span-full py-16 text-center text-sm text-muted-foreground">
@@ -196,35 +237,37 @@ function Accounts() {
                   </Select>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={async () => {
-                    if (confirm(`Clear ALL trades from "${account.name}"? The account stays.`)) {
-                      await action(account.id, { action: "clear" });
-                    }
-                  }}
-                >
-                  Clear trades
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={async () => {
-                    const others = data.accounts.filter((candidate) => candidate.id !== account.id);
-                    if (others.length === 0) return alert("No other account to transfer into.");
-                    const target = prompt(
-                      `Transfer all data into which account?\n${others.map((candidate, index) => `${index + 1}. ${candidate.name}`).join("\n")}\n\nEnter a number:`,
-                    );
-                    const chosen = others[Number(target) - 1];
-                    if (chosen)
-                      await action(account.id, { action: "transfer", toAccountId: chosen.id });
-                  }}
-                >
-                  Transfer data
-                </Button>
-              </div>
+              {!isMt4Mt5(account) && (
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      if (confirm(`Clear ALL trades from "${account.name}"? The account stays.`)) {
+                        await action(account.id, { action: "clear" });
+                      }
+                    }}
+                  >
+                    Clear trades
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      const others = data.accounts.filter((candidate) => candidate.id !== account.id);
+                      if (others.length === 0) return alert("No other account to transfer into.");
+                      const target = prompt(
+                        `Transfer all data into which account?\n${others.map((candidate, index) => `${index + 1}. ${candidate.name}`).join("\n")}\n\nEnter a number:`,
+                      );
+                      const chosen = others[Number(target) - 1];
+                      if (chosen)
+                        await action(account.id, { action: "transfer", toAccountId: chosen.id });
+                    }}
+                  >
+                    Transfer data
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}

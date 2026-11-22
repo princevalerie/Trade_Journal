@@ -1,0 +1,53 @@
+name: Build Desktop Apps (Windows & macOS)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build Web App Standalone
+        run: pnpm --filter web build
+
+      - name: Build Windows Executables (.exe)
+        if: runner.os == 'Windows'
+        run: pnpm --filter desktop pack:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build macOS Application & Disk Image (.dmg)
+        if: runner.os == 'macOS'
+        run: pnpm --filter desktop pack:mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: TradeJournal-${{ runner.os }}
+          path: apps/desktop/dist-packages/*

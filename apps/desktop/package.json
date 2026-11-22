@@ -1,0 +1,30 @@
+{
+  "name": "desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Trade Journal Desktop Application for Windows and macOS",
+  "main": "dist/main.js",
+  "author": "Trade Journal & LuxAlgo",
+  "license": "MIT",
+  "scripts": {
+    "build:ts": "tsc",
+    "prepare:standalone": "node scripts/prepare-standalone.js",
+    "prepack": "pnpm build:ts && pnpm prepare:standalone",
+    "pack:win": "pnpm prepack && electron-builder --win",
+    "pack:mac": "pnpm prepack && electron-builder --mac",
+    "pack": "pnpm prepack && electron-builder",
+    "dev": "pnpm build:ts && electron ."
+  },
+  "type": "module",
+  "dependencies": {
+    "better-sqlite3": "^12.2.0"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^3.7.1",
+    "@types/node": "^22.15.0",
+    "cross-env": "^7.0.3",
+    "electron": "34.3.0",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.9.0"
+  }
+}

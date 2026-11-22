@@ -13,9 +13,14 @@ Trade Journal is a [LuxAlgo](https://luxalgo.com) open-source project. Official 
 [![TypeScript](https://img.shields.io/badge/lang-TypeScript-white)](packages/core/src/types.ts)
 [![SQLite](https://img.shields.io/badge/db-SQLite-white)](#quickstart)
 
-[Quickstart](#quickstart) · [Features](#features) · [Screenshots](#screenshots) · [How it works](#how-it-works) · [Migrate](#migrating-from-tradezella-or-tradervue) · [Edge Score](docs/edge-score.md) · [Contributing](CONTRIBUTING.md)
+[Quickstart](#quickstart) · [Server / VPS & CLI Guide](PANDUAN_SERVER_VPS.md) · [Features](#features) · [Screenshots](#screenshots) · [How it works](#how-it-works) · [Migrate](#migrating-from-tradezella-or-tradervue) · [Edge Score](docs/edge-score.md) · [Contributing](CONTRIBUTING.md)
 
 </div>
+
+---
+
+> 🚀 **Ingin deploy ke Server / VPS?** Kami menyediakan panduan lengkap dan **CLI Manager** serbaguna untuk memudahkan instalasi, auto-start, backup, dan update 1-klik langsung dari GitHub:
+> 👉 **[Baca Panduan Lengkap Server VPS & CLI Manager Disini](PANDUAN_SERVER_VPS.md)**
 
 ---
 
@@ -47,6 +52,28 @@ using the same local data. Unlike `pnpm dev`, it does not compile each page on i
 visit or hot-reload code edits. After code changes, stop it and rerun `pnpm preview` to
 rebuild; use `pnpm start` to reuse an existing build. Switch back to `pnpm dev` when editing.
 Run only one mode at a time, since development and production share the build directory.
+
+### Trade Journal CLI Manager (Server & Local)
+
+Untuk memudahkan operasional di Server / VPS maupun lokal, gunakan CLI Manager bawaan:
+
+```bash
+# Jalankan menu interaktif CLI (Linux / macOS)
+./journal.sh
+
+# Atau di Windows / Linux:
+node journal.js
+```
+
+Perintah cepat yang sering digunakan:
+- `node journal.js start` : Jalankan server di background (Production/PM2).
+- `node journal.js update` : **Update otomatis dari GitHub** (git pull + pnpm install + rebuild + auto-restart).
+- `node journal.js stop` : Hentikan server.
+- `node journal.js status` : Cek status server.
+- `node journal.js logs` : Lihat log server realtime.
+- `node journal.js backup` : Backup database SQLite.
+
+Panduan setup VPS lengkap tersedia di **[PANDUAN_SERVER_VPS.md](PANDUAN_SERVER_VPS.md)**.
 
 ### Try it with demo data
 

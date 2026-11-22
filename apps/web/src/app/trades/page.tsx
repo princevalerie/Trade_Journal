@@ -179,6 +179,12 @@ function Trades() {
         cell: ({ getValue }) => <Pnl value={getValue<number>()} />,
       },
       {
+        id: "grossPnl",
+        accessorKey: "grossPnl",
+        header: "Gross P&L",
+        cell: ({ getValue }) => <Pnl value={getValue<number>()} />,
+      },
+      {
         id: "roi",
         accessorFn: (row) =>
           row.avgEntry * row.quantity > 0 ? row.netPnl / (row.avgEntry * row.quantity) : 0,
@@ -261,7 +267,7 @@ function Trades() {
     getRowId: (row) => row.key,
     initialState: {
       sorting: [{ id: "closedAt", desc: true }],
-      columnVisibility: { fees: false, executionCount: false, rating: false },
+      columnVisibility: { grossPnl: false, fees: false, executionCount: false, rating: false },
     },
   });
 

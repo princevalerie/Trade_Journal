@@ -1,0 +1,63 @@
+appId: com.tradejournal.desktop
+productName: Trade Journal
+electronVersion: 34.3.0
+copyright: Copyright © 2026 Trade Journal & LuxAlgo
+
+directories:
+  output: dist-packages
+  buildResources: resources
+
+asar: true
+asarUnpack:
+  - "**/*.node"
+
+extraResources:
+  - from: standalone
+    to: standalone
+    filter:
+      - "**/*"
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+  icon: resources/icon.ico
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Trade Journal
+
+mac:
+  target:
+    - target: dmg
+      arch:
+        - universal
+        - x64
+        - arm64
+    - target: zip
+      arch:
+        - universal
+        - x64
+        - arm64
+  category: public.app-category.finance
+  icon: resources/icon.png
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: resources/entitlements.mac.plist
+  entitlementsInherit: resources/entitlements.mac.plist
+
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications

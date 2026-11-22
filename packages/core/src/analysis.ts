@@ -14,6 +14,8 @@ export const FILTER_KEYS = [
   "status",
   "assetClass",
   "reviewed",
+  "executionType",
+  "ea",
   "ratingMin",
   "ratingMax",
   "quantityMin",
@@ -123,6 +125,84 @@ export function matchesFilters(t: AnnotatedTrade, f: AnalysisFilters, tz = "UTC"
     return false;
   if (f.assetClass && t.assetClass !== f.assetClass) return false;
   if (f.reviewed && Boolean(a?.reviewed) !== (f.reviewed === "yes")) return false;
+  if (f.executionType && f.executionType !== "all") {
+    const isEa = Boolean(
+      a?.tags?.some(
+        (tag) =>
+          tag.toLowerCase() === "ea" ||
+          tag.toLowerCase().startsWith("magic:") ||
+          tag.toLowerCase().startsWith("ea:"),
+      ),
+    );
+    const isManual = !isEa || Boolean(a?.tags?.some((tag) => tag.toLowerCase() === "manual" && !isEa));
+    if (f.executionType === "manual" && isEa) return false;
+    if (f.executionType === "ea" && !isEa) return false;
+  }
+  if (f.ea) {
+    const requestedEas = list(f.ea).map((s) => s.toLowerCase());
+    if (requestedEas.length > 0) {
+      const tradeTags = (a?.tags ?? []).map((s) => s.toLowerCase());
+
+      // Extract magic number from trade tags if present (e.g. "magic:20260919")
+      const tradeMagicTag = tradeTags.find((t) => t.startsWith("magic:"));
+      const tradeMagic = tradeMagicTag ? tradeMagicTag.replace(/^magic:/, "").trim() : null;
+
+      const matchesAnyEa = requestedEas.some((req) => {
+        // Extract magic number from requested filter if specified:
+        // Matches: "20260919", "magic:20260919", "20260919#comment1#comment2", "[20260919] comment"
+        let reqMagic: string | null = null;
+        const cleanReqPrefix = req.replace(/^magic:/, "").replace(/^ea:/, "").trim();
+        if (/^\d+$/.test(cleanReqPrefix)) {
+          reqMagic = cleanReqPrefix;
+        } else {
+          const hashMatch = cleanReqPrefix.match(/^(\d+)#/);
+          if (hashMatch && hashMatch[1]) {
+            reqMagic = hashMatch[1];
+          } else {
+            const bracketMatch = cleanReqPrefix.match(/^\[(\d+)\]/);
+            if (bracketMatch && bracketMatch[1]) {
+              reqMagic = bracketMatch[1];
+            }
+          }
+        }
+
+        // When filtering by a specific Magic Number, ONLY match on magic number!
+        // As long as the magic number matches, differing comments belong to the same EA unit.
+        if (reqMagic) {
+          if (tradeMagic) {
+            return tradeMagic === reqMagic;
+          }
+          // If trade doesn't have Magic tag (legacy / manual), fallback to matching comments
+          const reqComments = cleanReqPrefix
+            .split("#")
+            .slice(1)
+            .map((c) => c.trim())
+            .filter(Boolean);
+          if (reqComments.length > 0) {
+            return tradeTags.some((t) => {
+              const cleanTag = t.replace(/^ea:/, "").trim();
+              return reqComments.includes(cleanTag);
+            });
+          }
+          return false;
+        }
+
+        // Fallback for non-magic EA filters
+        if (tradeTags.includes(req)) return true;
+        const cleanReq = req.replace(/^magic:/, "").replace(/^ea:/, "").trim();
+
+        return tradeTags.some((t) => {
+          if (t === req || t === cleanReq) return true;
+          const cleanTag = t.replace(/^magic:/, "").replace(/^ea:/, "").trim();
+          if (cleanTag === cleanReq) return true;
+          if (cleanTag && req.includes(cleanTag)) return true;
+          if (cleanReq && t.includes(cleanReq)) return true;
+          return false;
+        });
+      });
+      if (!matchesAnyEa) return false;
+    }
+  }
   if (
     !within(a?.rating, f.ratingMin, f.ratingMax) ||
     !within(t.quantity, f.quantityMin, f.quantityMax) ||

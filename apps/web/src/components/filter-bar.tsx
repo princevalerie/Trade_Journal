@@ -70,6 +70,76 @@ export function FilterBar({ title, actions }: { title: string; actions?: React.R
         {showFilters && (
           <>
             <AccountSelector />
+
+            {/* Quick Execution Type Switcher (All / Manual / EA) */}
+            <div className="flex max-w-full shrink-0 items-center rounded-md border p-0.5 bg-muted/20">
+              {[
+                { id: "all", label: "All Trades" },
+                { id: "manual", label: "👤 Manual" },
+                { id: "ea", label: "🤖 EA" },
+              ].map((type) => {
+                const current = (filters.values.executionType || "all").toLowerCase();
+                const isSelected = current === type.id;
+                return (
+                  <Button
+                    key={type.id}
+                    variant={isSelected ? "secondary" : "ghost"}
+                    size="sm"
+                    className={`h-7 px-2.5 text-xs ${
+                      isSelected ? "font-semibold text-primary" : "text-muted-foreground"
+                    }`}
+                    onClick={() => {
+                      const next = new URLSearchParams(params.toString());
+                      if (type.id === "all") {
+                        next.delete("executionType");
+                        next.delete("ea");
+                      } else {
+                        next.set("executionType", type.id);
+                        if (type.id === "manual") next.delete("ea");
+                      }
+                      router.replace(`${pathname}?${next}`);
+                    }}
+                  >
+                    {type.label}
+                  </Button>
+                );
+              })}
+            </div>
+
+            {/* Active Selected EA Chip */}
+            {filters.values.ea && (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono">
+                <span>
+                  🤖{" "}
+                  {filters.values.ea
+                    .split(",")
+                    .map((item) => {
+                      const trimmed = item.trim();
+                      if (trimmed.toLowerCase().startsWith("magic:")) {
+                        return `Magic #${trimmed.slice(6)}`;
+                      }
+                      if (/^\d+$/.test(trimmed)) {
+                        return `Magic #${trimmed}`;
+                      }
+                      return trimmed;
+                    })
+                    .join(", ")}
+                </span>
+                <button
+                  type="button"
+                  title="Remove EA filter"
+                  onClick={() => {
+                    const next = new URLSearchParams(params.toString());
+                    next.delete("ea");
+                    router.replace(`${pathname}?${next}`);
+                  }}
+                  className="hover:text-foreground ml-1"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
             <div className="flex max-w-full shrink-0 items-center rounded-md border p-0.5">
               {["7d", "30d", "90d", "ytd", "all"].map((range) => (
                 <Button

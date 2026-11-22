@@ -8,7 +8,7 @@ import { syncAccount } from "@/server/sync";
 type Params = { params: Promise<{ id: string }> };
 
 interface ActionBody {
-  action: "archive" | "unarchive" | "clear" | "sync" | "transfer";
+  action: "archive" | "unarchive" | "clear" | "sync" | "transfer" | "rebuild";
   /** For "transfer": destination account id. */
   toAccountId?: string;
 }
@@ -20,6 +20,9 @@ export const POST = handler(async (request: Request, { params }: Params) => {
   const body = (await request.json()) as ActionBody;
 
   switch (body.action) {
+    case "rebuild":
+      rebuildAccount(id);
+      return ok({ rebuilt: true });
     case "archive":
       db.update(accounts).set({ archivedAt: nowIso() }).where(eq(accounts.id, id)).run();
       return ok({ archived: true });
@@ -33,6 +36,19 @@ export const POST = handler(async (request: Request, { params }: Params) => {
       });
       return ok({ cleared: true });
     case "sync":
+      if (!account.credentialsEnc) {
+        return ok({
+          sync: {
+            accountId: id,
+            equity: null,
+            positions: 0,
+            syncedAt: nowIso(),
+            inserted: 0,
+            skipped: 0,
+            warnings: [],
+          },
+        });
+      }
       return ok({ sync: await syncAccount(id) });
     case "transfer": {
       if (!body.toAccountId) return bad("toAccountId is required");

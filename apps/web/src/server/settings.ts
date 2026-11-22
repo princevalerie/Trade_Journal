@@ -48,9 +48,12 @@ export const getMultipliers = (): Record<string, number> => {
   }
 };
 
-export const aiKeyEnvironment = (provider: AiProvider): string | null =>
-  (provider === "openai" ? process.env.OPENAI_API_KEY : process.env.ANTHROPIC_API_KEY)?.trim() ||
-  null;
+export const aiKeyEnvironment = (provider: AiProvider): string | null => {
+  if (provider === "openai") return process.env.OPENAI_API_KEY?.trim() || null;
+  if (provider === "gemini")
+    return (process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY)?.trim() || null;
+  return process.env.ANTHROPIC_API_KEY?.trim() || null;
+};
 
 /** Provider keys are stored separately and encrypted like broker credentials. */
 export const getAiKey = (provider: AiProvider): string | null => {
@@ -77,12 +80,13 @@ export const setAnthropicKey = (key: string | null): void => setAiKey("anthropic
 export const getAiProvider = (): AiProvider => {
   const selected = getSetting("aiProvider");
   if (isAiProvider(selected)) return selected;
-  // Preserve existing Anthropic setups; an OpenAI-only setup works without a UI visit.
-  return !getAiKey("anthropic") && getAiKey("openai") ? "openai" : "anthropic";
+  if (getAiKey("gemini")) return "gemini";
+  if (getAiKey("openai")) return "openai";
+  return "anthropic";
 };
 
 export const aiModelSetting = (provider: AiProvider): string =>
-  provider === "anthropic" ? "aiModel" : "openaiModel";
+  provider === "anthropic" ? "aiModel" : provider === "gemini" ? "geminiModel" : "openaiModel";
 
 export const getAiModel = (provider: AiProvider): string =>
   getSetting(aiModelSetting(provider))?.trim() || AI_DEFAULT_MODELS[provider];
@@ -98,7 +102,11 @@ export const getAiSettings = (): AiSettingsPayload => {
         : null,
     model: getAiModel(provider),
   });
-  const aiConnections = { anthropic: connection("anthropic"), openai: connection("openai") };
+  const aiConnections = {
+    anthropic: connection("anthropic"),
+    openai: connection("openai"),
+    gemini: connection("gemini"),
+  };
   return {
     aiProvider,
     aiConfigured: aiConnections[aiProvider].configured,
