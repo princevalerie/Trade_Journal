@@ -6,6 +6,7 @@ import { insertExecutions } from "@/server/executions";
 import { newId, nowIso } from "@/server/ids";
 import { estimateFingerprint } from "@/server/market-data/estimates";
 import { rowToTrade } from "@/server/trades-query";
+import { deleteSetting, getSetting } from "@/server/settings";
 
 export interface Mt5OpenPosition {
   ticket: number | string;
@@ -210,6 +211,40 @@ export const POST = handler(
       .set(updateData)
       .where(eq(accounts.id, accountId))
       .run();
+  }
+
+  // Update open trades with live floating P&L and mark price from open positions
+  if (Array.isArray(body.account.positions) && body.account.positions.length > 0) {
+    const openTrades = await db
+      .select()
+      .from(trades)
+      .where(and(eq(trades.accountId, accountId), eq(trades.status, "open")))
+      .all();
+
+    for (const pos of body.account.positions) {
+      const matchingTrade = openTrades.find((t) => {
+        const matchTicket = pos.ticket && t.executionIdsJson && t.executionIdsJson.includes(String(pos.ticket));
+        const matchSymbol = t.symbol.toUpperCase() === pos.symbol.toUpperCase();
+        const matchSide = t.direction === pos.side;
+        return matchTicket || (matchSymbol && matchSide);
+      });
+
+      if (matchingTrade) {
+        const profit = Number(pos.profit) || 0;
+        const currentPrice = Number(pos.currentPrice) || null;
+        await db
+          .update(trades)
+          .set({
+            grossPnl: profit,
+            netPnl: profit - matchingTrade.fees,
+            avgExit: currentPrice,
+            stopLoss: pos.stopLoss && pos.stopLoss > 0 ? pos.stopLoss : matchingTrade.stopLoss,
+            profitTarget: pos.takeProfit && pos.takeProfit > 0 ? pos.takeProfit : matchingTrade.profitTarget,
+          })
+          .where(eq(trades.key, matchingTrade.key))
+          .run();
+      }
+    }
   }
 
   // Insert executions if any
@@ -486,9 +521,18 @@ export const POST = handler(
     }
   }
 
+  const globalResync = await getSetting("resync_cmd:all");
+  const accountResync = await getSetting(`resync_cmd:${accountId}`);
+  const shouldResync = globalResync === "FORCE_RESYNC" || accountResync === "FORCE_RESYNC";
+
+  if (accountResync) {
+    await deleteSetting(`resync_cmd:${accountId}`);
+  }
+
   return ok({
     success: true,
     accountId,
+    command: shouldResync ? "FORCE_RESYNC" : undefined,
     result: insertResult,
     syncedAt: now,
   });

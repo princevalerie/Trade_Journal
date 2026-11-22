@@ -83,6 +83,19 @@ function Trades() {
   const pageSize = 50;
   useEffect(() => setPage(0), [query]);
 
+  const hasOpenTrades = useMemo(
+    () => data?.trades?.some((t) => t.status === "open") ?? false,
+    [data?.trades],
+  );
+
+  useEffect(() => {
+    if (!hasOpenTrades) return;
+    const interval = setInterval(() => {
+      refresh();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [hasOpenTrades, refresh]);
+
   const columns = useMemo<ColumnDef<typeof features, TradeRow>[]>(
     () => [
       {
@@ -289,6 +302,15 @@ function Trades() {
         title="Trades"
         actions={
           <div className="flex items-center gap-2">
+            {hasOpenTrades && (
+              <Badge
+                variant="outline"
+                className="gap-1.5 border-emerald-500/40 bg-emerald-500/10 text-xs text-emerald-500 animate-pulse"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                Live Sync (5s)
+              </Badge>
+            )}
             <a href={`/api/export?format=csv&${query}`} download>
               <Button variant="outline" size="sm">
                 <Download />

@@ -4,6 +4,7 @@ import { bad, handler, ok } from "@/server/api";
 import { nowIso } from "@/server/ids";
 import { rebuildAccount } from "@/server/rebuild";
 import { syncAccount } from "@/server/sync";
+import { setSetting } from "@/server/settings";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -37,6 +38,8 @@ export const POST = handler(async (request: Request, { params }: Params) => {
       return ok({ cleared: true });
     case "sync":
       if (!account.credentialsEnc) {
+        // Queue full historical resync for this MT4/MT5 EA on its next heartbeat
+        await setSetting(`resync_cmd:${id}`, "FORCE_RESYNC");
         return ok({
           sync: {
             accountId: id,
@@ -46,6 +49,7 @@ export const POST = handler(async (request: Request, { params }: Params) => {
             inserted: 0,
             skipped: 0,
             warnings: [],
+            message: "Perintah resync dikirim ke EA MT4/MT5. Seluruh riwayat akan dibaca ulang dan ditimpa.",
           },
         });
       }

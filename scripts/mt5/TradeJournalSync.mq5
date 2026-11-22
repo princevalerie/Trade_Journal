@@ -30,7 +30,7 @@ input datetime          InpSyncStartDate   = D'2020.01.01 00:00:00';            
 input int               InpBatchSize       = 100;                                      // Batch Size (deals per HTTP request)
 
 input group "=== 3. Monitoring & Heartbeat ==="
-input int               InpHeartbeatSec    = 15;                                       // Live Heartbeat & Positions (seconds)
+input int               InpHeartbeatSec    = 5;                                        // Live Heartbeat & Positions (seconds)
 input bool              InpShowDashboard   = true;                                     // Show On-Chart GUI Dashboard
 
 input group "=== 4. Visuals & Chart Screenshots ==="
@@ -40,6 +40,9 @@ input int               InpScreenshotHeight= 450;                               
 
 //--- GUI Object Prefixes
 #define GUI_PREFIX "TJS_"
+
+//--- Forward Declarations
+void ForceFullResync();
 
 //--- Global Variables
 datetime g_last_synced_time  = 0;
@@ -323,6 +326,13 @@ bool SendJsonToJournal(string jsonPayload, string &responseOut)
       g_sync_status = "🟢 Connected (Realtime Active)";
       g_status_color = clrLime;
       UpdateDashboard();
+
+      // If server commanded full resync, trigger immediately
+      if(StringFind(responseOut, "FORCE_RESYNC") >= 0)
+      {
+         ForceFullResync();
+      }
+
       return true;
    }
    else
@@ -707,6 +717,16 @@ void TriggerFullSync()
 }
 
 //+------------------------------------------------------------------+
+//| Force Full Historical Resync & Overwrite Database                |
+//+------------------------------------------------------------------+
+void ForceFullResync()
+{
+   Print("⚡ [TradeJournalSync] Executing FORCE FULL RESYNC... reading ALL deals and overwriting to journal.");
+   g_last_history_total = 0;
+   SyncHistoryBatched(0, TimeCurrent() + 86400);
+}
+
+//+------------------------------------------------------------------+
 //| On-Chart GUI Dashboard Creation                                  |
 //+------------------------------------------------------------------+
 void CreateDashboard()
@@ -716,7 +736,7 @@ void CreateDashboard()
    int x = 20;
    int y = 30;
    int width = 330;
-   int height = 210;
+   int height = 242;
 
    // Background Panel
    ObjectCreate(0, GUI_PREFIX + "BG", OBJ_RECTANGLE_LABEL, 0, 0, 0);
@@ -742,8 +762,23 @@ void CreateDashboard()
    CreateLabel("Synced", "History Deals Synced: 0", x + 15, y + 152, clrSilver, 9);
    CreateLabel("LastTime", "Last Sync: -", x + 15, y + 170, clrGray, 8);
 
-   // Status Visual Banner (No manual button needed - 100% automatic)
+   // Status Visual Banner
    CreateLabel("AutoBadge", "● AUTO-SYNC: ACTIVE (Continuous Live Sync)", x + 15, y + 188, C'52,211,153', 8, true);
+
+   // Manual On-Chart Resync Button
+   string btnName = GUI_PREFIX + "BtnResync";
+   ObjectCreate(0, btnName, OBJ_BUTTON, 0, 0, 0);
+   ObjectSetInteger(0, btnName, OBJPROP_XDISTANCE, x + 15);
+   ObjectSetInteger(0, btnName, OBJPROP_YDISTANCE, y + 208);
+   ObjectSetInteger(0, btnName, OBJPROP_XSIZE, width - 30);
+   ObjectSetInteger(0, btnName, OBJPROP_YSIZE, 22);
+   ObjectSetString(0, btnName, OBJPROP_TEXT, "🔄 Force Full Resync Now");
+   ObjectSetInteger(0, btnName, OBJPROP_COLOR, clrWhite);
+   ObjectSetInteger(0, btnName, OBJPROP_BGCOLOR, C'37,99,235');
+   ObjectSetInteger(0, btnName, OBJPROP_BORDER_COLOR, C'59,130,246');
+   ObjectSetInteger(0, btnName, OBJPROP_FONTSIZE, 8);
+   ObjectSetString(0, btnName, OBJPROP_FONT, "Arial Bold");
+   ObjectSetInteger(0, btnName, OBJPROP_CORNER, CORNER_LEFT_UPPER);
 
    ChartRedraw(0);
 }
@@ -953,5 +988,19 @@ void OnTimer()
          g_total_deals_synced += newDealsCount;
    }
    UpdateDashboard();
+}
+
+//+------------------------------------------------------------------+
+//| Chart Event Handler                                              |
+//+------------------------------------------------------------------+
+void OnChartEvent(const int id, const long &lparam, const double &dparam, const string &sparam)
+{
+   if(id == CHARTEVENT_OBJECT_CLICK && sparam == GUI_PREFIX + "BtnResync")
+   {
+      ObjectSetInteger(0, GUI_PREFIX + "BtnResync", OBJPROP_STATE, false);
+      Print("🔄 [TradeJournalSync] User clicked Force Full Resync button on chart!");
+      ForceFullResync();
+      ChartRedraw(0);
+   }
 }
 //+------------------------------------------------------------------+

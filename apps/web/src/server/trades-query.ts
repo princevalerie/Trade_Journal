@@ -2,7 +2,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import { matchesFilters, type AnalysisFilters, type AnnotatedTrade } from "@luxalgo/journal-core";
 import { getTimeZone, getMultipliers, getJournalDefaults } from "./settings";
 import { EMPTY_DEFAULTS, type JournalDefaults } from "@/lib/journal-defaults";
-import { db, trades } from "@/db";
+import { db, trades, accounts } from "@/db";
 
 export type TradeFilters = AnalysisFilters & { accountIds?: string[] };
 
@@ -109,6 +109,47 @@ export const queryTrades = async (
     )
     .orderBy(asc(trades.openedAt))
     .all();
+
+  // For open trades, overlay latest floating P&L and current price from accounts snapshot
+  const hasOpenTrades = all.some((r) => r.status === "open");
+  if (hasOpenTrades) {
+    const accRows = await db
+      .select({ id: accounts.id, snapshotJson: accounts.snapshotJson })
+      .from(accounts)
+      .all();
+    const posMap = new Map<string, { ticket?: number | string; symbol: string; side: string; profit: number; currentPrice?: number }[]>();
+    for (const a of accRows) {
+      if (!a.snapshotJson) continue;
+      try {
+        const snap = JSON.parse(a.snapshotJson);
+        if (Array.isArray(snap.positions)) {
+          posMap.set(a.id, snap.positions);
+        }
+      } catch {}
+    }
+
+    for (const row of all) {
+      if (row.status === "open") {
+        const positions = posMap.get(row.accountId);
+        if (positions && positions.length > 0) {
+          const match = positions.find((p) => {
+            const ticketMatch = p.ticket && row.executionIdsJson && row.executionIdsJson.includes(String(p.ticket));
+            const symbolMatch = p.symbol && row.symbol.toUpperCase() === p.symbol.toUpperCase();
+            const sideMatch = p.side && row.direction === p.side;
+            return ticketMatch || (symbolMatch && sideMatch);
+          });
+          if (match && typeof match.profit === "number") {
+            row.grossPnl = match.profit;
+            row.netPnl = match.profit - row.fees;
+            if (typeof match.currentPrice === "number") {
+              row.avgExit = match.currentPrice;
+            }
+          }
+        }
+      }
+    }
+  }
+
   const timeZone = await getTimeZone();
   const config = await context();
   const pairs = all

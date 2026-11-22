@@ -71,23 +71,15 @@ function Accounts() {
   };
 
   const refreshAll = async () => {
-    const syncAccounts = data?.accounts.filter((a) => a.kind === "sync") ?? [];
-    if (syncAccounts.length === 0) return alert("No sync accounts (MT4/MT5) to refresh.");
     setRefreshingAll(true);
-    let successCount = 0;
     try {
-      for (const account of syncAccounts) {
-        try {
-          await action(account.id, { action: "sync" });
-          successCount++;
-        } catch (error) {
-          console.warn(`Could not refresh account ${account.name} (${account.id}):`, error);
-        }
-      }
+      await postJson("/api/accounts/resync", {});
       refresh();
-      if (successCount > 0) {
-        alert(`✅ Refreshed ${successCount} sync account(s) successfully.`);
-      }
+      alert(
+        "✅ Perintah Force Resync berhasil dikirim!\n\nSeluruh EA MT4/MT5 yang aktif akan membaca ulang seluruh riwayat transaksi dan menimpa database secara otomatis pada heartbeat berikutnya (~5-15 detik).",
+      );
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Gagal mengirim perintah resync");
     } finally {
       setRefreshingAll(false);
     }
