@@ -37,7 +37,7 @@ export const POST = handler(async (request: Request) => {
     return bad("Invalid filename");
   if (body.timeZone !== undefined)
     requireValue(isTimeZone(body.timeZone), "Enter a valid IANA statement timezone.");
-  const timeZone = body.timeZone ?? getImportTimeZone();
+  const timeZone = body.timeZone ?? (await getImportTimeZone());
 
   const parsed = body.mapping
     ? parseWithMapping(body.content, body.mapping, { timeZone })
@@ -81,7 +81,7 @@ export const POST = handler(async (request: Request) => {
   if (!body.accountId) return bad("accountId is required to commit");
   if (parsed.errors?.length) return bad(parsed.errors.join(" "));
   if (parsed.executions.length === 0) return bad("No executions to import");
-  const result = insertExecutions(
+  const result = await insertExecutions(
     body.accountId,
     parsed.executions as ImportedExecution[],
     "import",

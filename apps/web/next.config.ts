@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  output: process.env.VERCEL ? undefined : "standalone",
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   transpilePackages: ["@luxalgo/journal-core", "@luxalgo/journal-importers"],
-  serverExternalPackages: ["better-sqlite3"],
+  serverExternalPackages: ["@libsql/client"],
   // Runtime journal files belong on the user's disk, never in a deployable bundle.
   outputFileTracingExcludes: {
     "/*": ["./data/**/*", "../../outputs/**/*", "../../.runtime-backup*/**/*"],

@@ -12,13 +12,18 @@ import { dataDir } from "@/db";
 const keyMaterial = (): Buffer => {
   const secret = process.env.JOURNAL_SECRET;
   if (secret && secret.length > 0) return scryptSync(secret, "luxalgo-trade-journal", 32);
-  const dir = dataDir();
-  const keyPath = join(dir, ".secret");
-  if (!existsSync(keyPath)) {
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(keyPath, randomBytes(32).toString("hex"), { mode: 0o600 });
+  try {
+    const dir = dataDir();
+    const keyPath = join(dir, ".secret");
+    if (!existsSync(keyPath)) {
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(keyPath, randomBytes(32).toString("hex"), { mode: 0o600 });
+    }
+    return Buffer.from(readFileSync(keyPath, "utf8").trim(), "hex");
+  } catch {
+    // Fallback for serverless or read-only environments
+    return scryptSync("luxalgo-trade-journal-default-key", "luxalgo-trade-journal", 32);
   }
-  return Buffer.from(readFileSync(keyPath, "utf8").trim(), "hex");
 };
 
 export const encryptJson = (value: unknown): string => {

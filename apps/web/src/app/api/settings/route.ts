@@ -15,12 +15,12 @@ import {
 import { AI_PROVIDERS, AI_PROVIDER_NAMES, isAiProvider, type AiProvider } from "@/lib/ai-settings";
 import { isTimeZone } from "@/lib/timezone";
 
-export const GET = handler(() =>
+export const GET = handler(async () =>
   ok({
-    timeZone: getTimeZone(),
-    importTimeZone: getImportTimeZone(),
-    multipliers: getMultipliers(),
-    ...getAiSettings(),
+    timeZone: await getTimeZone(),
+    importTimeZone: await getImportTimeZone(),
+    multipliers: await getMultipliers(),
+    ...(await getAiSettings()),
   }),
 );
 
@@ -42,7 +42,7 @@ export const PATCH = handler(async (request: Request) => {
   requireValue(body && typeof body === "object" && !Array.isArray(body), "Enter valid settings.");
   if (body.aiProvider !== undefined)
     requireValue(isAiProvider(body.aiProvider), "Choose Google Gemini, Anthropic, or OpenAI.");
-  const provider = body.aiProvider ?? getAiProvider();
+  const provider = body.aiProvider ?? (await getAiProvider());
   if (body.aiModel !== undefined)
     requireValue(
       typeof body.aiModel === "string" &&
@@ -80,25 +80,25 @@ export const PATCH = handler(async (request: Request) => {
         ),
       "Contract multipliers must be positive numbers.",
     );
-  db.transaction(() => {
+  await db.transaction(async () => {
     // A display-only change must not silently alter the legacy import default.
     if (body.timeZone !== undefined || body.importTimeZone !== undefined)
-      setSetting("importTimeZone", body.importTimeZone ?? getImportTimeZone());
-    if (body.timeZone !== undefined) setSetting("timeZone", body.timeZone);
+      await setSetting("importTimeZone", body.importTimeZone ?? (await getImportTimeZone()));
+    if (body.timeZone !== undefined) await setSetting("timeZone", body.timeZone);
   });
   if (body.multipliers !== undefined)
-    db.transaction(() => {
-      setSetting("multipliers", JSON.stringify(body.multipliers));
-      for (const account of db.select({ id: accounts.id }).from(accounts).all())
-        rebuildAccount(account.id);
+    await db.transaction(async () => {
+      await setSetting("multipliers", JSON.stringify(body.multipliers));
+      for (const account of await db.select({ id: accounts.id }).from(accounts).all())
+        await rebuildAccount(account.id);
     });
-  db.transaction(() => {
+  await db.transaction(async () => {
     for (const id of AI_PROVIDERS) {
       const key = body[`${id}Key`];
-      if (key !== undefined) setAiKey(id, key);
+      if (key !== undefined) await setAiKey(id, key);
     }
-    if (body.aiProvider !== undefined) setSetting("aiProvider", body.aiProvider);
-    if (body.aiModel !== undefined) setSetting(aiModelSetting(provider), body.aiModel.trim());
+    if (body.aiProvider !== undefined) await setSetting("aiProvider", body.aiProvider);
+    if (body.aiModel !== undefined) await setSetting(aiModelSetting(provider), body.aiModel.trim());
   });
   return ok({ saved: true });
 });

@@ -84,29 +84,29 @@ export const partitionExecutions = (
 };
 
 /** Insert fills, rebuild trades, and attach optional manual notes in one transaction. */
-export const insertExecutions = (
+export const insertExecutions = async (
   accountId: string,
   rows: ImportedExecution[],
   source: ExecutionSource,
   manualNotes?: string,
-): InsertResult => {
+): Promise<InsertResult> => {
   requireValue(
     manualNotes === undefined ||
       (source === "manual" && typeof manualNotes === "string" && manualNotes.length <= 100000),
     "Manual trade notes must be at most 100,000 characters.",
   );
   requireValue(
-    db.select({ id: accounts.id }).from(accounts).where(eq(accounts.id, accountId)).get(),
+    await db.select({ id: accounts.id }).from(accounts).where(eq(accounts.id, accountId)).get(),
     "Account not found.",
   );
   const { usable, skipped, skippedReasons } = partitionExecutions(rows, source);
   let inserted = 0;
   let duplicates = 0;
   const createdAt = nowIso();
-  const defaults = getJournalDefaults();
+  const defaults = await getJournalDefaults();
   const note = manualNotes?.trim() ? manualNotes : undefined;
 
-  db.transaction((tx) => {
+  await db.transaction(async (tx) => {
     const noteExecutionIds = new Set<string>();
     for (const row of usable) {
       const id = newId();
@@ -115,7 +115,7 @@ export const insertExecutions = (
         ? row.fee
         : defaultFee(row.fee, row.quantity, accountId, row.symbol, defaults);
       const metaJson = row.importMetadata ? JSON.stringify(row.importMetadata) : null;
-      const result = tx
+      const result = await tx
         .insert(executions)
         .values({
           id,
@@ -142,13 +142,13 @@ export const insertExecutions = (
           },
         })
         .run();
-      if (result.changes > 0) {
+      if (result.rowsAffected > 0 || (result as any).changes > 0) {
         inserted++;
         if (note) noteExecutionIds.add(id);
       } else {
         duplicates++;
         if (note) {
-          const existing = tx
+          const existing = await tx
             .select({ id: executions.id })
             .from(executions)
             .where(
@@ -159,9 +159,9 @@ export const insertExecutions = (
         }
       }
     }
-    if (inserted > 0 || (source === "sync" && usable.length > 0)) rebuildAccount(accountId);
+    if (inserted > 0 || (source === "sync" && usable.length > 0)) await rebuildAccount(accountId);
     if (note) {
-      const affected = tx
+      const affected = await tx
         .select({
           key: trades.key,
           notes: trades.notes,
@@ -181,7 +181,7 @@ export const insertExecutions = (
           notes.length <= 100000,
           "Combined trade notes must be at most 100,000 characters.",
         );
-        tx.update(trades).set({ notes }).where(eq(trades.key, trade.key)).run();
+        await tx.update(trades).set({ notes }).where(eq(trades.key, trade.key)).run();
       }
     }
   });
@@ -189,21 +189,21 @@ export const insertExecutions = (
   return { inserted, duplicates, skipped, skippedReasons };
 };
 
-export const deleteExecutionsForTrades = (accountId: string, executionIds: string[]): void => {
+export const deleteExecutionsForTrades = async (accountId: string, executionIds: string[]): Promise<void> => {
   if (executionIds.length === 0) return;
-  db.delete(executions)
+  await db.delete(executions)
     .where(and(eq(executions.accountId, accountId), inArray(executions.id, executionIds)))
     .run();
-  rebuildAccount(accountId);
+  await rebuildAccount(accountId);
 };
 
-export const listExecutions = (accountId: string, ids?: string[]) => {
+export const listExecutions = async (accountId: string, ids?: string[]) => {
   if (ids && ids.length > 0) {
-    return db
+    return await db
       .select()
       .from(executions)
       .where(and(eq(executions.accountId, accountId), inArray(executions.id, ids)))
       .all();
   }
-  return db.select().from(executions).where(eq(executions.accountId, accountId)).all();
+  return await db.select().from(executions).where(eq(executions.accountId, accountId)).all();
 };

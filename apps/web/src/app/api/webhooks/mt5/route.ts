@@ -160,7 +160,7 @@ export const POST = handler(async (request: Request) => {
         : (body.account.balance ?? 0);
 
   // Find or auto-register account
-  const existingAccount = db
+  const existingAccount = await db
     .select()
     .from(accounts)
     .where(eq(accounts.id, accountId))
@@ -171,7 +171,7 @@ export const POST = handler(async (request: Request) => {
       body.account.name?.trim() ||
       `[${tradeModeLabel}${leverageText}] ${body.account.broker ? body.account.broker + " " : ""}MT5 #${body.account.login}`;
 
-    db.insert(accounts)
+    await db.insert(accounts)
       .values({
         id: accountId,
         name: accountName,
@@ -205,7 +205,7 @@ export const POST = handler(async (request: Request) => {
       updateData.initialBalance = body.account.initialBalance;
     }
 
-    db.update(accounts)
+    await db.update(accounts)
       .set(updateData)
       .where(eq(accounts.id, accountId))
       .run();
@@ -249,7 +249,7 @@ export const POST = handler(async (request: Request) => {
       };
     });
 
-    insertResult = insertExecutions(accountId, validRows, "sync");
+    insertResult = await insertExecutions(accountId, validRows, "sync");
 
     // Post-processing: Enrich materialized trades with SL, TP, Tags, Notes, Slippage, MAE/MFE & Screenshots
     const positionDataMap = new Map<string, {
@@ -342,13 +342,13 @@ export const POST = handler(async (request: Request) => {
 
     // Apply updates to trades, excursions, and attachments in DB
     if (positionDataMap.size > 0) {
-      const existingTrades = db
+      const existingTrades = await db
         .select()
         .from(trades)
         .where(eq(trades.accountId, accountId))
         .all();
 
-      db.transaction((tx) => {
+      await db.transaction(async (tx) => {
         for (const trade of existingTrades) {
           for (const [groupKey, rich] of positionDataMap.entries()) {
             if (trade.key.includes(groupKey)) {
@@ -385,7 +385,7 @@ export const POST = handler(async (request: Request) => {
               }
 
               if (Object.keys(updates).length > 0) {
-                tx.update(trades).set(updates).where(eq(trades.key, trade.key)).run();
+                await tx.update(trades).set(updates).where(eq(trades.key, trade.key)).run();
               }
 
               // Poin 1: Save MAE / MFE into tradeExcursions table
@@ -398,8 +398,8 @@ export const POST = handler(async (request: Request) => {
                   warnings: [],
                 });
 
-                const fp = estimateFingerprint(rowToTrade(trade));
-                tx.insert(tradeExcursions)
+                const fp = await estimateFingerprint(rowToTrade(trade));
+                await tx.insert(tradeExcursions)
                   .values({
                     tradeKey: trade.key,
                     fingerprint: fp,
@@ -425,7 +425,7 @@ export const POST = handler(async (request: Request) => {
                 try {
                   const imgBuffer = Buffer.from(rich.screenshotBase64, "base64");
                   if (imgBuffer.length > 0 && imgBuffer.length <= 8 * 1024 * 1024) {
-                    tx.insert(attachments)
+                    await tx.insert(attachments)
                       .values({
                         id: newId(),
                         ownerType: "trade",

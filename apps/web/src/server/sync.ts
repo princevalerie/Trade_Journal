@@ -17,7 +17,7 @@ export interface SyncOutcome extends InsertResult {
 }
 
 export const syncAccount = async (accountId: string): Promise<SyncOutcome> => {
-  const account = db.select().from(accounts).where(eq(accounts.id, accountId)).get();
+  const account = await db.select().from(accounts).where(eq(accounts.id, accountId)).get();
   if (!account) throw new Error("Account not found");
   if (account.kind !== "sync" || !account.credentialsEnc) {
     throw new Error("Account is not broker-connected");
@@ -28,8 +28,8 @@ export const syncAccount = async (accountId: string): Promise<SyncOutcome> => {
     broker: account.broker as BrokerId,
     credentials,
     // Some brokers rotate tokens on every fetch (Questrade): persist or die.
-    onCredentialsRotated: (next: Record<string, string>) => {
-      db.update(accounts)
+    onCredentialsRotated: async (next: Record<string, string>) => {
+      await db.update(accounts)
         .set({ credentialsEnc: encryptJson(next) })
         .where(eq(accounts.id, accountId))
         .run();
@@ -56,7 +56,7 @@ export const syncAccount = async (accountId: string): Promise<SyncOutcome> => {
 
   // One odd broker record must not fail the whole sync: invalid rows are
   // skipped and counted so the account page can report them.
-  const result = insertExecutions(accountId, timed, "sync");
+  const result = await insertExecutions(accountId, timed, "sync");
   if (untimed > 0) {
     result.skipped += untimed;
     if (result.skippedReasons.length < 5)
@@ -65,7 +65,7 @@ export const syncAccount = async (accountId: string): Promise<SyncOutcome> => {
 
   const equity = snapshot.accounts.reduce((total, a) => total + a.equity, 0);
   const positions = snapshot.accounts.flatMap((a) => a.positions);
-  db.update(accounts)
+  await db.update(accounts)
     .set({
       lastSyncAt: syncedAt,
       snapshotJson: JSON.stringify({ equity, positions, fetchedAt: snapshot.fetchedAt }),

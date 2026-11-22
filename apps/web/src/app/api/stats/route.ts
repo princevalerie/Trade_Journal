@@ -23,11 +23,11 @@ import { queryTrades, type TradeFilters } from "@/server/trades-query";
 /** The entire dashboard in one request. */
 export const GET = handler(async (request: Request) => {
   const url = new URL(request.url);
-  const timeZone = getTimeZone();
+  const timeZone = await getTimeZone();
   const filters: TradeFilters = readFilters(url.searchParams);
 
-  const { trades } = queryTrades(filters);
-  const accountRows = db.select().from(accounts).orderBy(asc(accounts.createdAt)).all();
+  const { trades } = await queryTrades(filters);
+  const accountRows = await db.select().from(accounts).orderBy(asc(accounts.createdAt)).all();
   const selected = filters.accounts
     ? accountRows.filter((a) => filters.accounts!.split(",").includes(a.id))
     : accountRows;
@@ -44,7 +44,7 @@ export const GET = handler(async (request: Request) => {
     timeZone,
     currencies: [...new Set(trades.map((t) => accountCurrencies.get(t.accountId) ?? "USD"))],
     accounts: accountRows.map((a) => ({ id: a.id, name: a.name })),
-    playbooks: db.select({ id: playbooks.id, name: playbooks.name }).from(playbooks).all(),
+    playbooks: await db.select({ id: playbooks.id, name: playbooks.name }).from(playbooks).all(),
     metrics,
     edgeScore: computeEdgeScore(metrics),
     days,

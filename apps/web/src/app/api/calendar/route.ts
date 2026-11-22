@@ -8,7 +8,7 @@ import { calendarInsights, calendarScope } from "@/lib/calendar-insights";
 /** Only compute the visible month, not every dashboard/report breakdown. */
 export const GET = handler(async (request: Request) => {
   const params = new URL(request.url).searchParams;
-  const timeZone = getTimeZone();
+  const timeZone = await getTimeZone();
   const today = dayKeyOf(new Date().toISOString(), timeZone);
   const year = Number(params.get("calYear") ?? today.slice(0, 4));
   const month = Number(params.get("calMonth") ?? today.slice(5, 7));
@@ -22,9 +22,9 @@ export const GET = handler(async (request: Request) => {
     "Choose a valid calendar month.",
   );
   const scope = calendarScope(readFilters(params), year, month);
-  const { trades } = queryTrades(scope);
+  const { trades } = await queryTrades(scope);
   const calendar = calendarMonthFromDays(dailyStats(trades, timeZone), year, month);
-  const accountRows = db
+  const accountRows = await db
     .select({ id: accounts.id, currency: accounts.currency })
     .from(accounts)
     .all();

@@ -10,16 +10,17 @@ import { queryTrades } from "@/server/trades-query";
 export const POST = handler(async (request: Request) => {
   const { date } = (await request.json()) as { date?: string };
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return bad("date (YYYY-MM-DD) is required");
-  const timeZone = getTimeZone();
+  const timeZone = await getTimeZone();
 
-  const { trades } = queryTrades();
+  const { trades } = await queryTrades();
   const dayTrades = trades.filter(
     (trade) => trade.closedAt && dayKeyOf(trade.closedAt, timeZone) === date,
   );
   if (dayTrades.length === 0) return bad("No closed trades on this day to recap");
 
   const metrics = computeMetrics(dayTrades, { timeZone });
-  const existingNote = db.select().from(journalDays).where(eq(journalDays.date, date)).get()?.note;
+  const noteRow = await db.select().from(journalDays).where(eq(journalDays.date, date)).get();
+  const existingNote = noteRow?.note;
 
   const tradeLines = dayTrades
     .map(

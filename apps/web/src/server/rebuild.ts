@@ -10,11 +10,11 @@ import { defaultRisk } from "@/lib/journal-defaults";
  * rows are upserted by their rebuild-stable key. Trades whose key no longer
  * exists (their executions were deleted) are removed.
  */
-export const rebuildAccount = (accountId: string): void => {
-  const account = db.select().from(accounts).where(eq(accounts.id, accountId)).get();
+export const rebuildAccount = async (accountId: string): Promise<void> => {
+  const account = await db.select().from(accounts).where(eq(accounts.id, accountId)).get();
   if (!account) return;
 
-  const rows = db.select().from(executions).where(eq(executions.accountId, accountId)).all();
+  const rows = await db.select().from(executions).where(eq(executions.accountId, accountId)).all();
   const executionInputs: Execution[] = rows.map((row) => ({
     id: row.id,
     accountId: row.accountId,
@@ -31,19 +31,19 @@ export const rebuildAccount = (accountId: string): void => {
 
   const trips = buildRoundTrips(executionInputs, {
     method: account.profitCalcMethod as ProfitCalcMethod,
-    multipliers: getMultipliers(),
+    multipliers: await getMultipliers(),
   });
   const obsolete = new Set(
-    db
+    (await db
       .select({ key: trades.key })
       .from(trades)
       .where(eq(trades.accountId, accountId))
-      .all()
+      .all())
       .map((row) => row.key),
   );
-  const defaults = getJournalDefaults();
+  const defaults = await getJournalDefaults();
 
-  db.transaction((tx) => {
+  await db.transaction(async (tx) => {
     for (const trip of trips) {
       obsolete.delete(trip.key);
       const computed = {
@@ -66,7 +66,7 @@ export const rebuildAccount = (accountId: string): void => {
         exitsJson: JSON.stringify(trip.exits),
         durationMs: trip.durationMs ?? null,
       };
-      tx.insert(trades)
+      await tx.insert(trades)
         .values({
           key: trip.key,
           ...computed,
@@ -78,7 +78,7 @@ export const rebuildAccount = (accountId: string): void => {
     const vanished = [...obsolete];
     // Keep each statement below SQLite's bind-parameter limit, even for long histories.
     for (let i = 0; i < vanished.length; i += 500) {
-      tx.delete(trades)
+      await tx.delete(trades)
         .where(
           and(eq(trades.accountId, accountId), inArray(trades.key, vanished.slice(i, i + 500))),
         )

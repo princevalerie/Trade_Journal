@@ -1,6 +1,7 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { matchesFilters, type AnalysisFilters, type AnnotatedTrade } from "@luxalgo/journal-core";
 import { getTimeZone, getMultipliers, getJournalDefaults } from "./settings";
+import { EMPTY_DEFAULTS, type JournalDefaults } from "@/lib/journal-defaults";
 import { db, trades } from "@/db";
 
 export type TradeFilters = AnalysisFilters & { accountIds?: string[] };
@@ -17,8 +18,18 @@ const parseJsonArray = (value: string | null): string[] => {
   }
 };
 
-const context = () => ({ multipliers: getMultipliers(), defaults: getJournalDefaults() });
-export const rowToTrade = (row: TradeRow, config = context()): AnnotatedTrade => {
+export const context = async () => ({
+  multipliers: await getMultipliers(),
+  defaults: await getJournalDefaults(),
+});
+
+export const rowToTrade = (
+  row: TradeRow,
+  config: { multipliers: Record<string, number>; defaults: JournalDefaults } = {
+    multipliers: {},
+    defaults: EMPTY_DEFAULTS,
+  },
+): AnnotatedTrade => {
   const multiplier = config.multipliers[row.symbol];
   const defaults = config.defaults;
   const missingMultiplier =
@@ -75,15 +86,15 @@ export const rowToTrade = (row: TradeRow, config = context()): AnnotatedTrade =>
  * Narrow indexed identity fields before decoding rows. The core predicate
  * remains authoritative for timezone, risk and breakeven semantics.
  */
-export const queryTrades = (
+export const queryTrades = async (
   filters: TradeFilters = {},
-): { rows: TradeRow[]; trades: AnnotatedTrade[] } => {
+): Promise<{ rows: TradeRow[]; trades: AnnotatedTrade[] }> => {
   const effective = { ...filters, accounts: filters.accounts ?? filters.accountIds?.join(",") };
   const accountIds = effective.accounts
     ?.split(",")
     .map((id) => id.trim())
     .filter(Boolean);
-  const all = db
+  const all = await db
     .select()
     .from(trades)
     .where(
@@ -98,8 +109,8 @@ export const queryTrades = (
     )
     .orderBy(asc(trades.openedAt))
     .all();
-  const timeZone = getTimeZone();
-  const config = context();
+  const timeZone = await getTimeZone();
+  const config = await context();
   const pairs = all
     .map((row) => ({ row, trade: rowToTrade(row, config) }))
     .filter(({ trade }) => matchesFilters(trade, effective, timeZone));
@@ -109,5 +120,5 @@ export const queryTrades = (
   };
 };
 
-export const getTradeByKey = (key: string): TradeRow | undefined =>
-  db.select().from(trades).where(eq(trades.key, key)).get();
+export const getTradeByKey = async (key: string): Promise<TradeRow | undefined> =>
+  await db.select().from(trades).where(eq(trades.key, key)).get();

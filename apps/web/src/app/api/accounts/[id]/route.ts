@@ -16,7 +16,7 @@ interface PatchBody {
 
 export const PATCH = handler(async (request: Request, { params }: Params) => {
   const { id } = await params;
-  const account = db.select().from(accounts).where(eq(accounts.id, id)).get();
+  const account = await db.select().from(accounts).where(eq(accounts.id, id)).get();
   if (!account) return bad("Account not found", 404);
 
   const body = (await request.json()) as PatchBody;
@@ -29,21 +29,21 @@ export const PATCH = handler(async (request: Request, { params }: Params) => {
   if (body.profitCalcMethod !== undefined) patch.profitCalcMethod = body.profitCalcMethod;
 
   if (Object.keys(patch).length > 0) {
-    db.update(accounts).set(patch).where(eq(accounts.id, id)).run();
+    await db.update(accounts).set(patch).where(eq(accounts.id, id)).run();
   }
   // A new profit-calc method changes per-exit attribution — recompute.
   if (body.profitCalcMethod && body.profitCalcMethod !== account.profitCalcMethod) {
-    rebuildAccount(id);
+    await rebuildAccount(id);
   }
   return ok({ updated: true });
 });
 
 export const DELETE = handler(async (_request: Request, { params }: Params) => {
   const { id } = await params;
-  db.transaction((tx) => {
-    tx.delete(trades).where(eq(trades.accountId, id)).run();
-    tx.delete(executions).where(eq(executions.accountId, id)).run();
-    tx.delete(accounts).where(eq(accounts.id, id)).run();
+  await db.transaction(async (tx) => {
+    await tx.delete(trades).where(eq(trades.accountId, id)).run();
+    await tx.delete(executions).where(eq(executions.accountId, id)).run();
+    await tx.delete(accounts).where(eq(accounts.id, id)).run();
   });
   return ok({ deleted: true });
 });

@@ -6,7 +6,7 @@ export const GET = handler(async (request: Request) => {
   const url = new URL(request.url);
   const providerParam = url.searchParams.get("provider");
   const provider: AiProvider = isAiProvider(providerParam) ? providerParam : "gemini";
-  const userApiKey = url.searchParams.get("apiKey")?.trim() || getAiKey(provider);
+  const userApiKey = url.searchParams.get("apiKey")?.trim() || (await getAiKey(provider));
 
   if (!userApiKey) {
     return ok({

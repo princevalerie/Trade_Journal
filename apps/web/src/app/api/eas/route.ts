@@ -21,8 +21,8 @@ export const GET = handler(async (req: Request) => {
     .from(trades);
 
   const allTrades = accountList.length > 0
-    ? query.where(inArray(trades.accountId, accountList)).all()
-    : query.all();
+    ? await query.where(inArray(trades.accountId, accountList)).all()
+    : await query.all();
 
   const STANDARD_TAGS = new Set([
     "manual",
