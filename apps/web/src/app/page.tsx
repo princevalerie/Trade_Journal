@@ -80,10 +80,15 @@ export default function DashboardPage() {
 function Dashboard() {
   const { query } = useFilters();
   const { data, loading, error, refresh } = useApi<StatsPayload>(`/api/stats?${query}`);
+  const { data: auth } = useApi<{ authenticated: boolean; configured: boolean }>("/api/auth");
+  const isAdmin = auth?.authenticated ?? false;
 
   return (
     <>
-      <FilterBar title="Dashboard" actions={<AddTradeDialog onSaved={refresh} />} />
+      <FilterBar
+        title="Dashboard"
+        actions={isAdmin ? <AddTradeDialog onSaved={refresh} /> : undefined}
+      />
       <DashboardContent
         data={data}
         loading={loading}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { ManualTradeEntry } from "./manual-trade-entry";
 import { Button } from "./ui/button";
+import { useApi } from "@/lib/use-api";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +15,13 @@ import {
 } from "./ui/dialog";
 
 export function AddTradeDialog({ onSaved }: { onSaved: () => void }) {
+  const { data: auth } = useApi<{ authenticated: boolean; configured: boolean }>("/api/auth");
   const [open, setOpen] = useState(false);
+
+  // Hide in public view (when password is configured and visitor is not authenticated as admin)
+  if (!auth?.authenticated) {
+    return null;
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
