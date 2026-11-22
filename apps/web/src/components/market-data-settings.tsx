@@ -50,10 +50,11 @@ function Connection({
   connection: MarketConnection;
   refresh: () => void;
 }) {
-  const info = providerInfo(connection.id)!;
+  const info = providerInfo(connection.id);
   const defaults = () =>
-    Object.fromEntries(info.fields.map((field) => [field.key, field.defaultValue ?? ""]));
+    Object.fromEntries((info?.fields ?? []).map((field) => [field.key, field.defaultValue ?? ""]));
   const [fields, setFields] = useState<Record<string, string>>(defaults);
+  if (!info) return null;
   const publicSource = info.mode === "public";
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");

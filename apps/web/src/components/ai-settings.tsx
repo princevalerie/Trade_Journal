@@ -31,7 +31,7 @@ export function AiSettings() {
 
   const fetchAvailableModels = async (targetProvider: AiProvider = provider, keyOverride = apiKey) => {
     const activeKey = keyOverride.trim() || (apiKeyInputRef.current?.value || "").trim();
-    const hasKey = Boolean(activeKey || data?.aiConnections[targetProvider]?.configured);
+    const hasKey = Boolean(activeKey || data?.aiConnections?.[targetProvider]?.configured);
     if (!hasKey) {
       setDetectedModels([]);
       setDetectError("");
@@ -75,9 +75,9 @@ export function AiSettings() {
 
   useEffect(() => {
     if (!data) return;
-    setProvider(data.aiProvider);
-    setModel(data.aiModel);
-    if (data.aiConnections?.[data.aiProvider]?.configured) {
+    if (data.aiProvider) setProvider(data.aiProvider);
+    if (data.aiModel) setModel(data.aiModel);
+    if (data.aiProvider && data.aiConnections?.[data.aiProvider]?.configured) {
       void fetchAvailableModels(data.aiProvider, "");
     } else {
       setDetectedModels([]);
@@ -85,9 +85,9 @@ export function AiSettings() {
     }
   }, [data]);
 
-  const connection = data?.aiConnections[provider];
+  const connection = data?.aiConnections?.[provider];
   const environment = connection?.source === "environment";
-  const name = AI_PROVIDER_NAMES[provider];
+  const name = AI_PROVIDER_NAMES[provider] ?? provider;
   const disabled = busy || loading || !data;
 
   const save = async (remove = false) => {
@@ -139,9 +139,9 @@ export function AiSettings() {
           Use Google Gemini, Anthropic, or OpenAI for recaps, trade critiques, and “ask your journal”. Your key is
           encrypted at rest. AI requests go from your server directly to the provider you select.
         </p>
-        {data && (
+        {data && data.aiProvider && (
           <p className="text-xs text-muted-foreground">
-            Active provider: {AI_PROVIDER_NAMES[data.aiProvider]} ·{" "}
+            Active provider: {AI_PROVIDER_NAMES[data.aiProvider] ?? data.aiProvider} ·{" "}
             {data.aiConfigured ? "Key configured" : "Not configured"}
           </p>
         )}

@@ -19,7 +19,14 @@ export function JournalDefaultSettings() {
   const [draft, setDraft] = useState(EMPTY_DEFAULTS),
     [status, setStatus] = useState("");
   useEffect(() => {
-    if (data) setDraft(data);
+    if (data) {
+      setDraft({
+        ...EMPTY_DEFAULTS,
+        ...data,
+        feeRules: data.feeRules ?? [],
+        riskRules: data.riskRules ?? [],
+      });
+    }
   }, [data]);
   const matchFields = (r: FeeRule | RiskRule, update: (r: FeeRule | RiskRule) => void) => (
     <>
@@ -30,7 +37,7 @@ export function JournalDefaultSettings() {
           onValueChange={(next) => update({ ...r, accountId: next })}
         >
           <option value="">All accounts</option>
-          {accounts?.accounts.map((a) => (
+          {accounts?.accounts?.map((a) => (
             <option key={a.id} value={a.id}>
               {a.name}
             </option>
@@ -95,7 +102,7 @@ export function JournalDefaultSettings() {
             Applied to new fills with a zero fee, including explicit zeroes. Nonzero imported fees
             and existing fills are kept. The first matching rule wins.
           </p>
-          {draft.feeRules.map((r, i) => {
+          {(draft.feeRules ?? []).map((r, i) => {
             const update = (next: FeeRule | RiskRule) =>
               setDraft({
                 ...draft,
@@ -168,7 +175,7 @@ export function JournalDefaultSettings() {
             Distances from weighted entry, adjusted for long or short direction. Applied only when a
             new trade is first created. The first matching rule wins.
           </p>
-          {draft.riskRules.map((r, i) => {
+          {(draft.riskRules ?? []).map((r, i) => {
             const update = (next: FeeRule | RiskRule) =>
               setDraft({
                 ...draft,

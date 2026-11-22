@@ -232,7 +232,7 @@ export function MarketCsvSettings({ onChange }: { onChange: () => void }) {
           {message}
         </p>
       )}
-      {data?.datasets.map((dataset) => (
+      {data?.datasets?.map((dataset) => (
         <div
           key={dataset.id}
           className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"

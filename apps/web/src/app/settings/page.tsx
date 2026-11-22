@@ -33,6 +33,15 @@ function Settings() {
   const [multipliers, setMultipliers] = useState("");
   const [saved, setSaved] = useState(false);
   const [failure, setFailure] = useState("");
+  const [deviceTimeZone, setDeviceTimeZone] = useState("");
+
+  useEffect(() => {
+    try {
+      setDeviceTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    } catch {
+      // ignore
+    }
+  }, []);
 
   useEffect(() => {
     if (data) {
@@ -98,12 +107,15 @@ function Settings() {
               <p className="mt-1 text-xs text-muted-foreground">
                 Trade times, calendars, journal days, and analytics use this timezone.
               </p>
-              <button
-                className="mt-1 text-xs text-muted-foreground underline"
-                onClick={() => setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone)}
-              >
-                Use this device's timezone ({Intl.DateTimeFormat().resolvedOptions().timeZone})
-              </button>
+              {deviceTimeZone && (
+                <button
+                  type="button"
+                  className="mt-1 text-xs text-muted-foreground underline block"
+                  onClick={() => setTimeZone(deviceTimeZone)}
+                >
+                  Use this device's timezone ({deviceTimeZone})
+                </button>
+              )}
             </div>
             <div>
               <Label htmlFor="import-timezone" className="mb-1 block text-xs text-muted-foreground">
