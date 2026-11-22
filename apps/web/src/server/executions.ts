@@ -106,8 +106,8 @@ export const insertExecutions = async (
   const defaults = await getJournalDefaults();
   const note = manualNotes?.trim() ? manualNotes : undefined;
 
+  const noteExecutionIds = new Set<string>();
   await db.transaction(async (tx) => {
-    const noteExecutionIds = new Set<string>();
     for (const row of usable) {
       const id = newId();
       const contentHash = executionHash(row);
@@ -159,32 +159,36 @@ export const insertExecutions = async (
         }
       }
     }
-    if (inserted > 0 || (source === "sync" && usable.length > 0)) await rebuildAccount(accountId);
-    if (note) {
-      const affected = await tx
-        .select({
-          key: trades.key,
-          notes: trades.notes,
-          executionIdsJson: trades.executionIdsJson,
-        })
-        .from(trades)
-        .where(eq(trades.accountId, accountId))
-        .all();
-      for (const trade of affected) {
-        const ids = JSON.parse(trade.executionIdsJson) as string[];
-        if (!ids.some((id) => noteExecutionIds.has(id))) continue;
-        // Keep prior annotations when these fills extend or close an existing position.
-        // Retrying the same submission must not append the note a second time.
-        if (trade.notes === note || trade.notes?.endsWith(`\n\n${note}`)) continue;
-        const notes = trade.notes?.trim() ? `${trade.notes}\n\n${note}` : note;
-        requireValue(
-          notes.length <= 100000,
-          "Combined trade notes must be at most 100,000 characters.",
-        );
-        await tx.update(trades).set({ notes }).where(eq(trades.key, trade.key)).run();
-      }
-    }
   });
+
+  if (inserted > 0 || (source === "sync" && usable.length > 0)) {
+    await rebuildAccount(accountId);
+  }
+
+  if (note && noteExecutionIds.size > 0) {
+    const affected = await db
+      .select({
+        key: trades.key,
+        notes: trades.notes,
+        executionIdsJson: trades.executionIdsJson,
+      })
+      .from(trades)
+      .where(eq(trades.accountId, accountId))
+      .all();
+    for (const trade of affected) {
+      const ids = JSON.parse(trade.executionIdsJson) as string[];
+      if (!ids.some((id) => noteExecutionIds.has(id))) continue;
+      // Keep prior annotations when these fills extend or close an existing position.
+      // Retrying the same submission must not append the note a second time.
+      if (trade.notes === note || trade.notes?.endsWith(`\n\n${note}`)) continue;
+      const notes = trade.notes?.trim() ? `${trade.notes}\n\n${note}` : note;
+      requireValue(
+        notes.length <= 100000,
+        "Combined trade notes must be at most 100,000 characters.",
+      );
+      await db.update(trades).set({ notes }).where(eq(trades.key, trade.key)).run();
+    }
+  }
 
   return { inserted, duplicates, skipped, skippedReasons };
 };

@@ -355,136 +355,134 @@ export const POST = handler(
         .where(eq(trades.accountId, accountId))
         .all();
 
-      await db.transaction(async (tx) => {
-        for (const trade of existingTrades) {
-          for (const [groupKey, rich] of positionDataMap.entries()) {
-            const matchesGroup = trade.key.includes(groupKey);
-            const matchesTicket =
-              rich.ticket !== undefined &&
-              trade.executionIdsJson !== null &&
-              trade.executionIdsJson.includes(String(rich.ticket));
+      for (const trade of existingTrades) {
+        for (const [groupKey, rich] of positionDataMap.entries()) {
+          const matchesGroup = trade.key.includes(groupKey);
+          const matchesTicket =
+            rich.ticket !== undefined &&
+            trade.executionIdsJson !== null &&
+            trade.executionIdsJson.includes(String(rich.ticket));
 
-            if (matchesGroup || matchesTicket) {
-              const updates: Record<string, unknown> = {};
+          if (matchesGroup || matchesTicket) {
+            const updates: Record<string, unknown> = {};
 
-              // Selalu perbarui/overwrite Stop Loss jika ada nilai valid (> 0)
-              if (rich.stopLoss !== undefined && rich.stopLoss > 0) {
-                updates.stopLoss = rich.stopLoss;
-              }
+            // Selalu perbarui/overwrite Stop Loss jika ada nilai valid (> 0)
+            if (rich.stopLoss !== undefined && rich.stopLoss > 0) {
+              updates.stopLoss = rich.stopLoss;
+            }
 
-              // Selalu perbarui/overwrite Take Profit jika ada nilai valid (> 0)
-              if (rich.takeProfit !== undefined && rich.takeProfit > 0) {
-                updates.profitTarget = rich.takeProfit;
-              }
+            // Selalu perbarui/overwrite Take Profit jika ada nilai valid (> 0)
+            if (rich.takeProfit !== undefined && rich.takeProfit > 0) {
+              updates.profitTarget = rich.takeProfit;
+            }
 
-              // Merge dan perbarui tags
-              let currentTags: string[] = [];
-              try {
-                if (trade.tagsJson) currentTags = JSON.parse(trade.tagsJson) as string[];
-              } catch {
-                currentTags = [];
-              }
-              if (rich.tags.has("EA")) {
-                currentTags = currentTags.filter((t) => t.toLowerCase() !== "manual");
-              }
-              const mergedTags = Array.from(new Set([...currentTags, ...rich.tags]));
-              if (
-                mergedTags.length !== currentTags.length ||
-                JSON.stringify(mergedTags) !== trade.tagsJson
-              ) {
-                updates.tagsJson = JSON.stringify(mergedTags);
-              }
+            // Merge dan perbarui tags
+            let currentTags: string[] = [];
+            try {
+              if (trade.tagsJson) currentTags = JSON.parse(trade.tagsJson) as string[];
+            } catch {
+              currentTags = [];
+            }
+            if (rich.tags.has("EA")) {
+              currentTags = currentTags.filter((t) => t.toLowerCase() !== "manual");
+            }
+            const mergedTags = Array.from(new Set([...currentTags, ...rich.tags]));
+            if (
+              mergedTags.length !== currentTags.length ||
+              JSON.stringify(mergedTags) !== trade.tagsJson
+            ) {
+              updates.tagsJson = JSON.stringify(mergedTags);
+            }
 
-              // Selalu perbarui/overwrite komentar & catatan dari MT5, tanpa menghapus catatan manual user
-              if (rich.notes.length > 0) {
-                const newMetaLines = rich.notes;
-                if (!trade.notes) {
-                  updates.notes = newMetaLines.join("\n");
-                } else {
-                  const oldLines = trade.notes.split("\n");
-                  const userManualLines = oldLines.filter((line) => {
-                    const trimmed = line.trim();
-                    return (
-                      !trimmed.startsWith("MT5:") &&
-                      !trimmed.startsWith("MT4:") &&
-                      !trimmed.startsWith("Slippage:") &&
-                      !trimmed.startsWith("Comm:") &&
-                      !trimmed.startsWith("Swap:") &&
-                      !trimmed.includes("Comm: $")
-                    );
-                  });
-                  const cleanUserPart = userManualLines.join("\n").trim();
-                  const combined = cleanUserPart
-                    ? `${cleanUserPart}\n\n${newMetaLines.join("\n")}`
-                    : newMetaLines.join("\n");
-                  if (combined !== trade.notes) {
-                    updates.notes = combined;
-                  }
-                }
-              }
-
-              if (Object.keys(updates).length > 0) {
-                await tx.update(trades).set(updates).where(eq(trades.key, trade.key)).run();
-              }
-
-              // Poin 1: Save MAE / MFE into tradeExcursions table
-              if (rich.mae !== undefined && rich.mfe !== undefined) {
-                const estimateJson = JSON.stringify({
-                  mae: rich.mae,
-                  mfe: rich.mfe,
-                  sampledBars: rich.sampledBars ?? 0,
-                  excludedBars: 0,
-                  warnings: [],
+            // Selalu perbarui/overwrite komentar & catatan dari MT5, tanpa menghapus catatan manual user
+            if (rich.notes.length > 0) {
+              const newMetaLines = rich.notes;
+              if (!trade.notes) {
+                updates.notes = newMetaLines.join("\n");
+              } else {
+                const oldLines = trade.notes.split("\n");
+                const userManualLines = oldLines.filter((line) => {
+                  const trimmed = line.trim();
+                  return (
+                    !trimmed.startsWith("MT5:") &&
+                    !trimmed.startsWith("MT4:") &&
+                    !trimmed.startsWith("Slippage:") &&
+                    !trimmed.startsWith("Comm:") &&
+                    !trimmed.startsWith("Swap:") &&
+                    !trimmed.includes("Comm: $")
+                  );
                 });
-
-                const fp = await estimateFingerprint(rowToTrade(trade));
-                await tx.insert(tradeExcursions)
-                  .values({
-                    tradeKey: trade.key,
-                    fingerprint: fp,
-                    provider: "mt5",
-                    symbol: trade.symbol,
-                    resolution: "1m",
-                    fetchedAt: now,
-                    estimateJson,
-                  })
-                  .onConflictDoUpdate({
-                    target: tradeExcursions.tradeKey,
-                    set: {
-                      fingerprint: fp,
-                      estimateJson,
-                      fetchedAt: now,
-                    },
-                  })
-                  .run();
-              }
-
-              // Poin 5: Save Chart Screenshot into attachments table
-              if (rich.screenshotBase64) {
-                try {
-                  const imgBuffer = Buffer.from(rich.screenshotBase64, "base64");
-                  if (imgBuffer.length > 0 && imgBuffer.length <= 8 * 1024 * 1024) {
-                    await tx.insert(attachments)
-                      .values({
-                        id: newId(),
-                        ownerType: "trade",
-                        ownerId: trade.key,
-                        name: `MT5_Chart_${rich.ticket || trade.symbol}.png`,
-                        mime: "image/png",
-                        size: imgBuffer.length,
-                        data: imgBuffer,
-                        createdAt: now,
-                      })
-                      .run();
-                  }
-                } catch (err) {
-                  console.error("Failed to save MT5 chart screenshot:", err);
+                const cleanUserPart = userManualLines.join("\n").trim();
+                const combined = cleanUserPart
+                  ? `${cleanUserPart}\n\n${newMetaLines.join("\n")}`
+                  : newMetaLines.join("\n");
+                if (combined !== trade.notes) {
+                  updates.notes = combined;
                 }
+              }
+            }
+
+            if (Object.keys(updates).length > 0) {
+              await db.update(trades).set(updates).where(eq(trades.key, trade.key)).run();
+            }
+
+            // Poin 1: Save MAE / MFE into tradeExcursions table
+            if (rich.mae !== undefined && rich.mfe !== undefined) {
+              const estimateJson = JSON.stringify({
+                mae: rich.mae,
+                mfe: rich.mfe,
+                sampledBars: rich.sampledBars ?? 0,
+                excludedBars: 0,
+                warnings: [],
+              });
+
+              const fp = await estimateFingerprint(rowToTrade(trade));
+              await db.insert(tradeExcursions)
+                .values({
+                  tradeKey: trade.key,
+                  fingerprint: fp,
+                  provider: "mt5",
+                  symbol: trade.symbol,
+                  resolution: "1m",
+                  fetchedAt: now,
+                  estimateJson,
+                })
+                .onConflictDoUpdate({
+                  target: tradeExcursions.tradeKey,
+                  set: {
+                    fingerprint: fp,
+                    estimateJson,
+                    fetchedAt: now,
+                  },
+                })
+                .run();
+            }
+
+            // Poin 5: Save Chart Screenshot into attachments table
+            if (rich.screenshotBase64) {
+              try {
+                const imgBuffer = Buffer.from(rich.screenshotBase64, "base64");
+                if (imgBuffer.length > 0 && imgBuffer.length <= 8 * 1024 * 1024) {
+                  await db.insert(attachments)
+                    .values({
+                      id: newId(),
+                      ownerType: "trade",
+                      ownerId: trade.key,
+                      name: `MT5_Chart_${rich.ticket || trade.symbol}.png`,
+                      mime: "image/png",
+                      size: imgBuffer.length,
+                      data: imgBuffer,
+                      createdAt: now,
+                    })
+                    .run();
+                }
+              } catch (err) {
+                console.error("Failed to save MT5 chart screenshot:", err);
               }
             }
           }
         }
-      });
+      }
     }
   }
 
