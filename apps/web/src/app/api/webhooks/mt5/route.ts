@@ -352,17 +352,26 @@ export const POST = handler(
       await db.transaction(async (tx) => {
         for (const trade of existingTrades) {
           for (const [groupKey, rich] of positionDataMap.entries()) {
-            if (trade.key.includes(groupKey)) {
+            const matchesGroup = trade.key.includes(groupKey);
+            const matchesTicket =
+              rich.ticket !== undefined &&
+              trade.executionIdsJson !== null &&
+              trade.executionIdsJson.includes(String(rich.ticket));
+
+            if (matchesGroup || matchesTicket) {
               const updates: Record<string, unknown> = {};
 
-              if (rich.stopLoss && (trade.stopLoss === null || trade.stopLoss === undefined)) {
+              // Selalu perbarui/overwrite Stop Loss jika ada nilai valid (> 0)
+              if (rich.stopLoss !== undefined && rich.stopLoss > 0) {
                 updates.stopLoss = rich.stopLoss;
               }
-              if (rich.takeProfit && (trade.profitTarget === null || trade.profitTarget === undefined)) {
+
+              // Selalu perbarui/overwrite Take Profit jika ada nilai valid (> 0)
+              if (rich.takeProfit !== undefined && rich.takeProfit > 0) {
                 updates.profitTarget = rich.takeProfit;
               }
 
-              // Merge tags
+              // Merge dan perbarui tags
               let currentTags: string[] = [];
               try {
                 if (trade.tagsJson) currentTags = JSON.parse(trade.tagsJson) as string[];
@@ -373,15 +382,38 @@ export const POST = handler(
                 currentTags = currentTags.filter((t) => t.toLowerCase() !== "manual");
               }
               const mergedTags = Array.from(new Set([...currentTags, ...rich.tags]));
-              if (mergedTags.length !== currentTags.length) {
+              if (
+                mergedTags.length !== currentTags.length ||
+                JSON.stringify(mergedTags) !== trade.tagsJson
+              ) {
                 updates.tagsJson = JSON.stringify(mergedTags);
               }
 
-              // Merge notes
+              // Selalu perbarui/overwrite komentar & catatan dari MT5, tanpa menghapus catatan manual user
               if (rich.notes.length > 0) {
-                const noteBlock = rich.notes.join("\n");
-                if (!trade.notes || !trade.notes.includes(noteBlock)) {
-                  updates.notes = trade.notes ? `${trade.notes}\n\n${noteBlock}` : noteBlock;
+                const newMetaLines = rich.notes;
+                if (!trade.notes) {
+                  updates.notes = newMetaLines.join("\n");
+                } else {
+                  const oldLines = trade.notes.split("\n");
+                  const userManualLines = oldLines.filter((line) => {
+                    const trimmed = line.trim();
+                    return (
+                      !trimmed.startsWith("MT5:") &&
+                      !trimmed.startsWith("MT4:") &&
+                      !trimmed.startsWith("Slippage:") &&
+                      !trimmed.startsWith("Comm:") &&
+                      !trimmed.startsWith("Swap:") &&
+                      !trimmed.includes("Comm: $")
+                    );
+                  });
+                  const cleanUserPart = userManualLines.join("\n").trim();
+                  const combined = cleanUserPart
+                    ? `${cleanUserPart}\n\n${newMetaLines.join("\n")}`
+                    : newMetaLines.join("\n");
+                  if (combined !== trade.notes) {
+                    updates.notes = combined;
+                  }
                 }
               }
 
