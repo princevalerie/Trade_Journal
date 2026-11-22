@@ -50,7 +50,7 @@ export const POST = handler(
     ].join("\n");
 
     const answer = await runAi(
-      `Answer the trader's question using ONLY these aggregates from their journal. If the data
+      `Answer the trader's question in the same language it was asked, using ONLY these aggregates from their journal. If the data
 can't answer it, say exactly what's missing (e.g. "tag your trades' stops to get R stats").
 Cite the numbers you used. Under 200 words.
 
