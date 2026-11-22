@@ -5,6 +5,7 @@ packages:
 allowBuilds:
   esbuild: true
   better-sqlite3: true
+  electron: false
 ignoredOptionalDependencies:
   - sharp
 minimumReleaseAgeExclude:
