@@ -102,7 +102,8 @@ const mapOrderTypeToTag = (orderType?: string): string | null => {
   return "Market Order";
 };
 
-export const POST = handler(async (request: Request) => {
+export const POST = handler(
+  async (request: Request) => {
   const configuredSecret = process.env.MT_WEBHOOK_SECRET;
   const headerKey = request.headers.get("x-api-key");
   const body = (await request.json()) as Mt5WebhookBody;
@@ -455,4 +456,4 @@ export const POST = handler(async (request: Request) => {
     result: insertResult,
     syncedAt: now,
   });
-});
+}, { public: true });
