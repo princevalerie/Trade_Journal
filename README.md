@@ -4,19 +4,19 @@
 
 <br/>
 
-### 📊 The Modern Open-Source Trade Journal & Analytics Platform
-**Sinkronisasi Realtime MetaTrader 4 & 5, Analisis Mendalam, Kalender P&L, Replay Transaksi, dan AI Reflection.**  
+### 📊 Modern Open-Source Trade Journal & Analytics Platform
+**Sinkronisasi Realtime MetaTrader 4 & 5 di Windows VPS / Server, Analisis Mendalam, Kalender P&L, Replay Transaksi, dan AI Reflection.**  
 *Self-hosted, aman, database SQLite lokal, dan 100% gratis selamanya.*
 
 [![GitHub](https://img.shields.io/badge/GitHub-princevalerie%2FTrade__Journal-blue?logo=github)](https://github.com/princevalerie/Trade_Journal)
 [![Node](https://img.shields.io/badge/node-%3E%3D22.0.0-green.svg)](https://nodejs.org)
 [![pnpm](https://img.shields.io/badge/pnpm-11.0.8-orange.svg)](https://pnpm.io)
+[![Windows VPS Ready](https://img.shields.io/badge/Windows%20VPS-Tested%20%26%20Ready-0078D6?logo=windows)](https://github.com/princevalerie/Trade_Journal)
 [![License](https://img.shields.io/badge/license-MIT-white.svg)](LICENSE)
-[![SQLite](https://img.shields.io/badge/database-SQLite-blue.svg)](#arsitektur-data)
 
 ---
 
-[Instalasi Server / VPS](#-1-panduan-instalasi-di-server--vps) · [Penggunaan CLI Manager](#-2-panduan-lengkap-trade-journal-cli-manager) · [Update 1-Klik](#-3-cara-update-otomatis-dari-github-1-perintah) · [Sinkronisasi MT4 & MT5](#-5-sinkronisasi-metatrader-4--metatrader-5-webhook) · [Fitur Utama](#-6-fitur-unggulan-trade-journal) · [Troubleshooting](#-8-troubleshooting--faq)
+[Instalasi Windows VPS](#-1-panduan-instalasi-di-windows-vps-rekomendasi) · [Penggunaan CLI Windows](#-2-penggunaan-cli-manager-di-windows-vps) · [Update 1-Klik](#-3-cara-update-otomatis-dari-github-1-perintah) · [Sinkronisasi MT4 & MT5](#-5-sinkronisasi-metatrader-4--metatrader-5-di-vps) · [Auto-Start 24/7](#-4-menjalankan-server-247-auto-start-saat-windows-vps-reboot) · [Akses dari HP/Laptop](#-6-cara-mengakses-dashboard-dari-hplaptop-rumah)
 
 </div>
 
@@ -26,99 +26,74 @@
 
 ---
 
-## ⚡ Kebutuhan Sistem (Prerequisites)
+## ⚡ Kebutuhan Sistem (Windows VPS / Server)
 
-Sebelum menginstal, pastikan server atau komputer Anda sudah terpasang:
-- **Node.js**: Versi **22.x LTS** ke atas ([Unduh Node.js](https://nodejs.org))
-- **pnpm**: Versi **11.x** (`npm install -g pnpm`)
-- **Git**: Terpasang di sistem (`git --version`)
-- **Sistem Operasi**: Linux (Ubuntu 20.04/22.04/24.04, Debian), Windows 10/11 / Windows Server, atau macOS.
+Sebelum memulai di Windows VPS Anda (Windows Server 2016/2019/2022 atau Windows 10/11), pastikan software gratis berikut sudah terpasang:
+
+1. **Node.js (Versi 22 LTS)**: Unduh dan install dari website resmi 👉 **[nodejs.org](https://nodejs.org)** *(pilih versi LTS 64-bit .msi, saat instalasi klik Next hingga selesai)*.
+2. **Git for Windows**: Unduh dan install dari 👉 **[git-scm.com](https://git-scm.com/download/win)** *(klik Next hingga selesai)*.
 
 ---
 
-## 🚀 1. Panduan Instalasi di Server / VPS
+## 🚀 1. Panduan Instalasi di Windows VPS (Rekomendasi)
 
-### Langkah 1: Persiapan Environment di VPS (Ubuntu/Debian)
-Buka terminal SSH VPS Anda dan jalankan perintah berikut:
+Karena terminal MetaTrader (MT4 & MT5) berjalan di Windows, menjalankan Trade Journal di **Windows VPS yang sama** adalah setup yang paling ideal, cepat, dan stabil!
 
-```bash
-# Update sistem
-sudo apt update && sudo apt upgrade -y
+### Langkah 1: Buka PowerShell / Command Prompt (CMD) di Windows VPS
+Klik tombol **Start**, ketik `powershell` atau `cmd`, lalu tekan **Enter**.
 
-# Install Git & Curl
-sudo apt install -y git curl
-
-# Install Node.js 22 LTS
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-sudo apt install -y nodejs
-
-# Install pnpm & PM2 (Process Manager) secara global
-sudo npm install -g pnpm pm2
+### Langkah 2: Install pnpm & PM2
+Ketik perintah berikut lalu tekan Enter:
+```cmd
+npm install -g pnpm pm2
 ```
 
-### Langkah 2: Clone Repository dari GitHub
-```bash
-# Clone project ke server
+### Langkah 3: Clone Repository dari GitHub
+Pilih folder tempat Anda ingin meletakkan aplikasi (misal di Desktop atau Drive `C:\`):
+```cmd
+cd /d C:\
 git clone https://github.com/princevalerie/Trade_Journal.git
-
-# Masuk ke folder project
 cd Trade_Journal
-
-# Berikan izin eksekusi pada script launcher CLI (khusus Linux/macOS)
-chmod +x journal.sh
 ```
 
-### Langkah 3: Install Dependencies & Build Aplikasi
-```bash
-# Install seluruh library yang dibutuhkan
+### Langkah 4: Install Dependencies & Build Aplikasi
+```cmd
 pnpm install
-
-# Build / compile aplikasi Next.js untuk production
 pnpm build
 ```
 
-### Langkah 4: Jalankan Server
-```bash
-# Menggunakan CLI Manager bawaan (Rekomendasi)
-./journal.sh start
-# atau
-node journal.js start
+### Langkah 5: Jalankan Aplikasi!
+Cukup jalankan:
+```cmd
+journal start
 ```
-Aplikasi kini aktif dan berjalan di port **3000** (`http://IP_VPS_ANDA:3000`).
+Atau cukup **Double-Click file `journal.bat`** di File Explorer Windows Anda! 🎉  
+Buka browser di Windows VPS (Chrome/Edge), lalu buka alamat:  
+👉 **`http://localhost:3000`**
 
 ---
 
-## 💻 2. Panduan Lengkap Trade Journal CLI Manager
+## 💻 2. Penggunaan CLI Manager di Windows VPS
 
-Aplikasi ini sudah dilengkapi dengan **CLI Manager Mandiri** (`journal.js` / `journal.sh` / `journal.bat`) tanpa perlu menginstall tools tambahan. CLI ini dirancang untuk memudahkan segala kebutuhan administrasi server.
+Untuk memudahkan Anda mengelola server tanpa perlu menghafal perintah yang rumit, aplikasi ini sudah menyediakan launcher otomatis:
 
-### 🎮 Cara Membuka Menu Interaktif
-- **Di Linux VPS / macOS:**
-  ```bash
-  ./journal.sh
-  ```
-- **Di Windows Server / Lokal:**
-  ```cmd
-  journal
-  REM atau: node journal.js
-  ```
-- **Melalui pnpm:**
-  ```bash
-  pnpm journal
-  ```
+### 🖱️ Cara 1: Double-Click (Paling Mudah)
+Buka folder `Trade_Journal` di Windows File Explorer, lalu **Double-Click** file:
+👉 **`journal.bat`**
 
-### 🖥️ Tampilan Menu Interaktif:
+Jendela Command Prompt interaktif yang rapi dan berwarna akan langsung muncul:
+
 ```text
 ╔═══════════════════════════════════════════════════════════╗
 ║            📊 TRADE JOURNAL MANAGER (CLI)                 ║
 ╚═══════════════════════════════════════════════════════════╝
- Status Server: ● RUNNING (PM2, Port: 3000, PID: 14205)
+ Status Server: ● RUNNING (Port: 3000, PID: 8524)
 
 [1] 🚀 Start Server (Production)
 [2] 🛠️  Start Server (Dev / Turbopack)
 [3] ⏹️  Stop Server
 [4] 🔄 Restart Server
-[5] ⬇️  Update / Upgrade dari GitHub (Git Pull + Rebuild)
+[5] ⬇️  Update / Upgrade dari GitHub (Git Pull + Rebuild)  <-- UPDATE 1-KLIK
 [6] 🔨 Build Aplikasi Manual (pnpm build)
 [7] 💾 Backup Database
 [8] ♻️  Restore Database
@@ -127,152 +102,160 @@ Aplikasi ini sudah dilengkapi dengan **CLI Manager Mandiri** (`journal.js` / `jo
 
 Pilih nomor menu [0-9]:
 ```
+*Tinggal ketik angka pilihan Anda (misal ketik `1` lalu Enter untuk start, atau `5` untuk update).*
+
+---
+
+### ⌨️ Cara 2: Perintah Langsung via CMD / PowerShell
+Buka CMD di folder project, Anda bisa mengetik perintah langsung:
+
+| Perintah Windows | Fungsi |
+| :--- | :--- |
+| `journal` *(atau `node journal.js`)* | Buka **Menu Interaktif** |
+| `journal start` | Jalankan server di background (Production) |
+| `journal stop` | Matikan server |
+| `journal restart` | Restart server |
+| `journal update` | **Tarik update terbaru dari GitHub** + Rebuild + Auto-Restart |
+| `journal status` | Cek apakah server aktif, port berapa, dan PID berapa |
+| `journal logs` | Lihat log aktivitas server secara realtime |
+| `journal backup` | Backup database SQLite ke folder `backups/` |
+| `journal restore` | Kembalikan data dari file backup |
 
 ---
 
 ## 🔄 3. Cara Update Otomatis dari GitHub (1 Perintah)
 
-Ketika Anda melakukan update kode di laptop lalu push ke GitHub, Anda **TIDAK PERLU** lagi login ke VPS dan mengetik rentetan perintah panjang. Cukup jalankan:
+Jika Anda melakukan perubahan kode di laptop/PC lokal lalu melakukan `git push` ke GitHub, cara mengupdate di Windows VPS sangat mudah:
 
-```bash
-node journal.js update
+Cukup buka CMD di folder project lalu ketik:
+```cmd
+journal update
 ```
-*(atau buka `./journal.sh` lalu pilih menu **[5]**)*
+*(atau **Double-click `journal.bat`**, lalu pilih nomor **5**)*
 
-### ⚙️ Alur Kerja Otomatis Fitur Update:
-1. 💾 **Auto-Backup Database:** Database SQLite Anda saat ini otomatis disalin ke folder `backups/` sebagai cadangan keamanan.
-2. ⬇️ **Git Pull:** Menarik seluruh perubahan kode terbaru dari repositori GitHub.
-3. 📦 **Pnpm Install:** Otomatis mengupdate dan menginstall package baru jika ada dependensi yang diperbarui.
-4. 🔨 **Pnpm Build:** Mengompilasi ulang aplikasi Next.js ke versi paling optimal.
-5. 🔄 **Auto-Restart:** Server yang sedang berjalan otomatis direstart secara mulus (zero-downtime) dengan versi terbaru tanpa mematikan data transaksi Anda!
-
----
-
-## 📋 4. Daftar Perintah CLI (Cheat-Sheet)
-
-Selain menggunakan menu interaktif, Anda juga bisa menjalankan perintah langsung via CLI:
-
-| Perintah | Fungsi | Contoh Penggunaan |
-| :--- | :--- | :--- |
-| `node journal.js` | Membuka **Menu Interaktif** TUI | `./journal.sh` |
-| `node journal.js start` | Menjalankan server di background (Production/PM2) | `node journal.js start` |
-| `node journal.js stop` | Menghentikan server yang berjalan | `node journal.js stop` |
-| `node journal.js restart` | Me-restart server Trade Journal | `node journal.js restart` |
-| `node journal.js update` | **Update otomatis dari GitHub** + Rebuild + Auto-Restart | `node journal.js update` |
-| `node journal.js status` | Cek status server (aktif/mati, PID, port) | `node journal.js status` |
-| `node journal.js logs` | Memantau log server secara realtime (Live Tail) | `node journal.js logs` |
-| `node journal.js backup` | Mem-backup database SQLite ke folder `backups/` | `node journal.js backup` |
-| `node journal.js restore` | Me-restore database dari daftar cadangan backup | `node journal.js restore` |
-| `node journal.js build` | Menjalankan build manual Next.js (`pnpm build`) | `node journal.js build` |
-| `node journal.js dev` | Menjalankan server dalam mode pengembangan (hot-reload) | `node journal.js dev` |
-| `node journal.js help` | Menampilkan ringkasan bantuan perintah | `node journal.js help` |
+### ⚙️ Apa yang terjadi secara otomatis?
+1. 💾 **Auto-Backup Database:** Database SQLite (`journal.db`) Anda otomatis dicadangkan ke folder `backups/` agar riwayat transaksi aman 100%.
+2. ⬇️ **Git Pull:** Otomatis mengambil kode terbaru dari GitHub.
+3. 📦 **Pnpm Install:** Otomatis mengupdate library baru jika ada.
+4. 🔨 **Pnpm Build:** Otomatis mengompilasi ulang Next.js.
+5. 🔄 **Auto-Restart:** Server otomatis me-restart ke versi terbaru tanpa mematikan data trading Anda.
 
 ---
 
-## 🤖 5. Sinkronisasi MetaTrader 4 & MetaTrader 5 (Webhook)
+## 🛡️ 4. Menjalankan Server 24/7 (Auto-Start saat Windows VPS Reboot)
 
-Trade Journal dilengkapi dengan skrip sinkronisasi institusional berkinerja tinggi untuk MT4 dan MT5 di folder `scripts/`:
+VPS Windows terkadang restart otomatis (misalnya setelah update Windows otomatis). Agar Trade Journal **langsung otomatis menyala kembali saat Windows VPS boot/login**, pilih salah satu cara mudah berikut:
+
+### Opsi A: Menggunakan Folder Windows Startup (Paling Simpel & Cepat)
+1. Di Windows VPS, tekan tombol keyboard **`Windows + R`**.
+2. Ketik **`shell:startup`** lalu klik **OK**. Folder *Startup* Windows akan terbuka.
+3. Buka folder `Trade_Journal`, klik kanan pada file **`journal.bat`** -> pilih **Create shortcut** (Buat pintasan).
+4. Pindahkan file shortcut tersebut ke dalam folder **Startup** yang terbuka tadi.
+5. Selesai! Setiap kali Windows VPS menyala/reboot, server Trade Journal akan langsung otomatis berjalan di background.
+
+### Opsi B: Menggunakan PM2
+Buka PowerShell / CMD sebagai Administrator:
+```cmd
+# Jalankan via PM2
+pm2 start "pnpm start" --name "trade-journal"
+
+# Simpan state proses
+pm2 save
+```
+
+---
+
+## 🤖 5. Sinkronisasi MetaTrader 4 & MetaTrader 5 di VPS
+
+Karena Trade Journal dan MetaTrader berada di **satu Windows VPS yang sama**, koneksinya super cepat dan tidak butuh kuota internet!
 
 ### A. Pengaturan di MetaTrader 5 (MT5):
-1. Salin file `scripts/mt5/TradeJournalSync.mq5` ke folder `MQL5/Experts/` terminal MT5 Anda.
-2. Compile skrip di MetaEditor (tekan `F7`).
-3. Di MT5, buka menu **Tools** -> **Options** -> **Expert Advisors**:
+1. Salin file `scripts/mt5/TradeJournalSync.mq5` ke folder:  
+   `C:\Users\<Username>\AppData\Roaming\MetaQuotes\Terminal\<INSTANCE_ID>\MQL5\Experts\`
+2. Buka MetaEditor di MT5, buka file tersebut lalu tekan **`F7`** (Compile).
+3. Di terminal MT5, klik menu **Tools** -> **Options** -> tab **Expert Advisors**:
    - Centang **"Allow algorithmic trading"**.
-   - Centang **"Allow WebRequest for listed URL"**, lalu tambahkan URL server Anda:
-     - Jika di VPS yang sama: `http://127.0.0.1:3000`
-     - Jika VPS berbeda/remote: `https://domain-anda.com` atau `http://IP_VPS:3000`
-4. Pasang Expert Advisor `TradeJournalSync` ke salah satu chart.
-5. Masukkan parameter input:
-   - `InpApiUrl`: `http://127.0.0.1:3000/api/webhooks/mt5` (atau URL domain publik Anda).
-   - `InpApiKey`: Masukkan secret key jika Anda mengaktifkan `MT_WEBHOOK_SECRET`.
+   - Centang **"Allow WebRequest for listed URL"**, lalu tambahkan URL:
+     ```text
+     http://127.0.0.1:3000
+     ```
+4. Drag/pasang Expert Advisor `TradeJournalSync` ke salah satu chart apapun (misal EURUSD M1).
+5. Pada tab Inputs:
+   - `InpApiUrl`: `http://127.0.0.1:3000/api/webhooks/mt5`
+   - `InpApiKey`: Kosongkan (atau isi sesuai `MT_WEBHOOK_SECRET` Anda).
+6. Selesai! Semua transaksi yang ada dan transaksi baru otomatis tersinkron ke dashboard.
+
+---
 
 ### B. Pengaturan di MetaTrader 4 (MT4):
-1. Salin file `scripts/mt4/TradeJournalSync.mq4` ke folder `MQL4/Experts/` terminal MT4 Anda, lalu compile.
-2. Di MT4, buka menu **Tools** -> **Options** -> **Expert Advisors**:
-   - Centang **"Allow WebRequest for listed URL"**, lalu masukkan URL server Anda.
-3. *Catatan Port MT4:* MT4 WebRequest memiliki batasan bawaan yang menyukai Port 80. Jika Anda menjalankan MT4 di VPS lokal bersama web app, Anda dapat menyalakan proxy bawaan:
-   ```bash
+1. Salin file `scripts/mt4/TradeJournalSync.mq4` ke folder `MQL4/Experts/` terminal MT4 Anda, lalu compile (`F7`).
+2. Di MT4, buka menu **Tools** -> **Options** -> tab **Expert Advisors**:
+   - Centang **"Allow WebRequest for listed URL"**, lalu masukkan:
+     ```text
+     http://127.0.0.1
+     ```
+3. *Catatan Port MT4:* WebRequest MT4 secara default membatasi port non-standar dan menyukai port 80. Cukup jalankan proxy bawaan di terminal Windows VPS Anda:
+   ```cmd
    node scripts/mt4-proxy.js
    ```
-   Lalu arahkan URL MT4 ke `http://127.0.0.1/api/webhooks/mt4`.
+4. Pasang `TradeJournalSync` di chart MT4 dengan `InpApiUrl`: `http://127.0.0.1/api/webhooks/mt4`.
 
-### C. Fitur Pengelompokan EA Cerdas (Magic Number):
-Aplikasi ini secara otomatis mengenali dan menyatukan seluruh transaksi dari satu robot EA meskipun komentar orderya berbeda-beda (misal `Scalp_Buy` & `Scalp_Sell`):
+---
+
+### C. Pengelompokan EA Cerdas (Magic Number):
+Aplikasi ini secara otomatis mengenali dan menyatukan seluruh transaksi dari satu robot EA meskipun komentar ordernya berbeda (misal `Scalp_Buy` & `Scalp_Sell`):
 - Pilihan filter di UI akan menampilkan format: **`MagicNumber#namakomentar1#namakomentar2`** (contoh: `20260919#HullMA Long v2#PPT_HullATR`).
 - Filter murni berfokus pada **Magic Number**, sehingga 100% transaksi dari EA tersebut tercatat sebagai satu kesatuan performa yang akurat.
 
 ---
 
-## 🛡️ 6. Menjalankan 24/7 di Server VPS (Auto-Start saat Reboot)
+## 📱 6. Cara Mengakses Dashboard dari HP/Laptop Rumah
 
-Untuk memastikan server selalu menyala dan otomatis aktif kembali jika server VPS mengalami restart atau mati mendadak, gunakan integrasi **PM2**:
+Jika Trade Journal berjalan di Windows VPS dan Anda ingin membukanya dari browser HP atau laptop di rumah, gunakan **Cloudflare Tunnel (100% Gratis & Sangat Aman)**:
 
-```bash
-# 1. Jalankan aplikasi via PM2
-node journal.js start
-
-# 2. Simpan daftar proses aktif PM2
-pm2 save
-
-# 3. Aktifkan auto-startup pada sistem operasi
-pm2 startup
-```
-*(Ikuti perintah baris tunggal yang ditampilkan terminal untuk mengunci konfigurasi startup).*
+1. Unduh `cloudflared-windows-amd64.msi` di Windows VPS dari GitHub Cloudflare: 👉 [cloudflared releases](https://github.com/cloudflare/cloudflared/releases).
+2. Buka Command Prompt di Windows VPS, lalu jalankan:
+   ```cmd
+   cloudflared tunnel --url http://localhost:3000
+   ```
+3. Anda akan mendapatkan URL HTTPS gratis resmi (contoh: `https://xxxx-xxxx.trycloudflare.com`).
+4. Buka URL tersebut dari browser HP atau laptop Anda di rumah untuk memantau jurnal trading Anda kapan saja dan di mana saja!
 
 ---
 
-## ⚙️ 7. Konfigurasi Lingkungan (`.env`)
+## 🐧 7. Panduan untuk Linux VPS (Ubuntu / Debian)
 
-Konfigurasi opsional dapat dibuat pada file `.env` di root atau `apps/web/.env.local`:
+Jika Anda menggunakan VPS Linux, langkahnya sama persis:
+```bash
+# Clone & install
+git clone https://github.com/princevalerie/Trade_Journal.git
+cd Trade_Journal
+chmod +x journal.sh
+pnpm install && pnpm build
 
-```env
-# Port server (default: 3000)
-PORT=3000
+# Buka menu CLI Linux
+./journal.sh
 
-# Password akses dashboard (opsional, sangat disarankan jika VPS dapat diakses publik)
-JOURNAL_PASSWORD=PasswordKuatAndaDisini
-
-# Kunci integrasi AI untuk refleksi trading (opsional)
-ANTHROPIC_API_KEY=sk-ant-...
-OPENAI_API_KEY=sk-proj-...
+# Update otomatis dari GitHub
+node journal.js update
 ```
 
 ---
 
-## ✨ 8. Fitur Unggulan Trade Journal
+## ❓ 8. Troubleshooting & FAQ
 
-- **Sinkronisasi Multi-Akun Otomatis:** Menghubungkan banyak akun MT4 & MT5 sekaligus ke dalam satu dashboard terpusat.
-- **P&L Calendar & Equity Curve:** Visualisasi kalender harian profit/loss, win rate, profit factor, dan kurva pertumbuhan modal.
-- **Pencatatan Lengkap:** Otomatis merekam Stop Loss, Take Profit, Slippage, Komisi Broker, Biaya Swap, dan MAE/MFE (Max Adverse/Favorable Excursion).
-- **Pencarian & Multi-Filter EA:** Filter transaksi berdasarkan Akun, Simbol, Tanggal, Gaya Trading, hingga drilldown ke masing-masing Magic Number EA.
-- **Catatan & Refleksi Harian:** Mendukung Markdown, checklist kesalahan trading (mistakes tracking), evaluasi playbook, dan integrasi AI Journaling.
-- **Manajemen Akun Prop Firm:** Fitur pemantauan evaluasi prop firm, target profit, batas drawdown harian, dan riwayat payout.
-- **Privasi 100% Milik Anda:** Data tersimpan lokal di SQLite server Anda sendiri. Tidak ada data finansial yang dibagikan ke server pihak ketiga.
+#### Q: Di Windows VPS muncul pesan `node: command not found`?
+Pastikan Anda sudah menginstall Node.js dari [nodejs.org](https://nodejs.org). Setelah install selesai, **tutup semua jendela CMD/PowerShell** lalu buka kembali agar perintah `node` dan `pnpm` dikenali.
 
----
-
-## ❓ 9. Troubleshooting & FAQ
-
-#### Q: Bagaimana cara melihat log server jika terjadi kendala?
-Cukup jalankan perintah:
-```bash
-node journal.js logs
+#### Q: Bagaimana cara melihat log server jika web tidak terbuka?
+Buka CMD di folder project lalu ketik:
+```cmd
+journal logs
 ```
-Atau jika menggunakan PM2:
-```bash
-pm2 logs trade-journal
-```
+Atau double click `journal.bat` lalu pilih menu nomor **[9]**.
 
-#### Q: Webhook MT5 / MT4 memunculkan pesan error "WebRequest failed (404)"?
-1. Pastikan URL di input EA sudah menyertakan path lengkap: `/api/webhooks/mt5` atau `/api/webhooks/mt4`.
-2. Pastikan domain/IP server sudah dimasukkan ke daftar **Allow WebRequest** di menu `Tools -> Options -> Expert Advisors` terminal MetaTrader.
-3. Pastikan firewall VPS Anda mengizinkan port yang digunakan (misal port 3000 atau port 80/443).
-
-#### Q: Bagaimana cara mereset atau membersihkan cache build?
-Jalankan perintah rebuild manual:
-```bash
-node journal.js build
-```
+#### Q: Data trade aman saat saya menjalankan `journal update`?
+**Sangat aman!** Script update otomatis menyalin file database SQLite (`journal.db`) Anda ke folder `backups/` dengan penamaan tanggal dan jam sebelum melakukan pull dari GitHub.
 
 ---
 
