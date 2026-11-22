@@ -4,7 +4,7 @@
   "private": true,
   "description": "Trade Journal Desktop Application for Windows and macOS",
   "main": "dist/main.js",
-  "author": "Trade Journal & LuxAlgo",
+  "author": "Trade Journal & PrinceAlgo",
   "license": "MIT",
   "scripts": {
     "build:ts": "tsc",

@@ -25,7 +25,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { LuxAlgoMark } from "@/components/luxalgo-mark";
+import { ValburyMark } from "@/components/valbury-mark";
 import { PrivacyToggle } from "./privacy";
 import { ThemeToggle } from "./theme";
 import { PageTransition } from "./page-transition";
@@ -182,7 +182,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <div>
         Open source ·{" "}
         <a
-          href="https://github.com/LuxAlgo/trade-journal"
+          href="https://github.com/princevalerie/Trade_Journal"
           className="underline underline-offset-2 hover:text-foreground"
           target="_blank"
           rel="noreferrer"
@@ -214,7 +214,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               aria-describedby={undefined}
             >
               <div className="flex h-14 shrink-0 items-center gap-2.5 border-b px-4">
-                <LuxAlgoMark className="h-[18px] w-5" />
+                <ValburyMark className="h-[18px] w-5" />
                 <DialogPrimitive.Title className="text-sm font-semibold">
                   Trade Journal
                 </DialogPrimitive.Title>
@@ -241,7 +241,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           href="/"
           className="mr-auto flex min-w-0 items-center gap-2 text-sm font-semibold tracking-tight"
         >
-          <LuxAlgoMark className="hidden h-4 w-[18px] shrink-0 min-[380px]:block" />
+          <ValburyMark className="hidden h-4 w-[18px] shrink-0 min-[380px]:block" />
           <span className="truncate">Trade Journal</span>
         </Link>
         <PrivacyToggle compact />
@@ -254,7 +254,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       >
         <div className="journal-sidebar-header relative flex h-14 shrink-0 items-center border-b">
           <Link href="/" className="journal-sidebar-home flex h-full min-w-0 items-center gap-2.5">
-            <LuxAlgoMark className="h-[18px] w-5 shrink-0" />
+            <ValburyMark className="h-[18px] w-5 shrink-0" />
             <span className="journal-sidebar-brand-label text-sm font-semibold tracking-tight">
               Trade Journal
             </span>

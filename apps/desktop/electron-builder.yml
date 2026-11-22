@@ -1,7 +1,7 @@
 appId: com.tradejournal.desktop
 productName: Trade Journal
 electronVersion: 34.3.0
-copyright: Copyright © 2026 Trade Journal & LuxAlgo
+copyright: Copyright © 2026 Trade Journal & PrinceAlgo
 
 directories:
   output: dist-packages

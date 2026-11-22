@@ -11,7 +11,7 @@ import { dataDir } from "@/db";
  */
 const keyMaterial = (): Buffer => {
   const secret = process.env.JOURNAL_SECRET;
-  if (secret && secret.length > 0) return scryptSync(secret, "luxalgo-trade-journal", 32);
+  if (secret && secret.length > 0) return scryptSync(secret, "princealgo-trade-journal", 32);
   try {
     const dir = dataDir();
     const keyPath = join(dir, ".secret");
@@ -22,7 +22,7 @@ const keyMaterial = (): Buffer => {
     return Buffer.from(readFileSync(keyPath, "utf8").trim(), "hex");
   } catch {
     // Fallback for serverless or read-only environments
-    return scryptSync("luxalgo-trade-journal-default-key", "luxalgo-trade-journal", 32);
+    return scryptSync("princealgo-trade-journal-default-key", "princealgo-trade-journal", 32);
   }
 };
 

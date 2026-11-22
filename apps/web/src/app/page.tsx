@@ -358,7 +358,7 @@ function DashboardContent({
                       Needs 5+ closed trades. The formula is open —{" "}
                       <a
                         className="underline"
-                        href="https://github.com/LuxAlgo/trade-journal/blob/main/docs/edge-score.md"
+                        href="https://github.com/princevalerie/Trade_Journal/blob/main/docs/edge-score.md"
                         target="_blank"
                         rel="noreferrer"
                       >
