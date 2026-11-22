@@ -21,7 +21,8 @@ import { getTimeZone } from "@/server/settings";
 import { queryTrades, type TradeFilters } from "@/server/trades-query";
 
 /** The entire dashboard in one request. */
-export const GET = handler(async (request: Request) => {
+export const GET = handler(
+  async (request: Request) => {
   const url = new URL(request.url);
   const timeZone = await getTimeZone();
   const filters: TradeFilters = readFilters(url.searchParams);
@@ -84,4 +85,4 @@ export const GET = handler(async (request: Request) => {
       })),
     initialBalance,
   });
-});
+}, { public: true });

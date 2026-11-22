@@ -18,6 +18,7 @@ export const GET = handler(
     const estimates = await savedEstimates([trade]);
     return ok({ saved: estimates.get(key) ?? null });
   },
+  { public: true },
 );
 
 export const POST = handler(

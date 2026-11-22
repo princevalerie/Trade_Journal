@@ -77,7 +77,7 @@ export function AiSettings() {
     if (!data) return;
     setProvider(data.aiProvider);
     setModel(data.aiModel);
-    if (data.aiConnections[data.aiProvider]?.configured) {
+    if (data.aiConnections?.[data.aiProvider]?.configured) {
       void fetchAvailableModels(data.aiProvider, "");
     } else {
       setDetectedModels([]);

@@ -6,7 +6,8 @@ import { queryTrades } from "@/server/trades-query";
 import { calendarInsights, calendarScope } from "@/lib/calendar-insights";
 
 /** Only compute the visible month, not every dashboard/report breakdown. */
-export const GET = handler(async (request: Request) => {
+export const GET = handler(
+  async (request: Request) => {
   const params = new URL(request.url).searchParams;
   const timeZone = await getTimeZone();
   const today = dayKeyOf(new Date().toISOString(), timeZone);
@@ -48,4 +49,4 @@ export const GET = handler(async (request: Request) => {
     currencies.sort();
   }
   return ok({ calendar, insights: calendarInsights(calendar), timeZone, currencies, scope });
-});
+}, { public: true });

@@ -35,24 +35,27 @@ async function owner(type: string, id: string): Promise<boolean> {
   );
 }
 
-export const GET = handler(async (request: Request) => {
-  const p = new URL(request.url).searchParams;
-  const type = p.get("type") ?? "",
-    id = p.get("id") ?? "";
-  requireValue(await owner(type, id), "Attachment owner not found.");
-  return ok({
-    attachments: await db
-      .select({
-        id: attachments.id,
-        name: attachments.name,
-        mime: attachments.mime,
-        size: attachments.size,
-      })
-      .from(attachments)
-      .where(and(eq(attachments.ownerType, type), eq(attachments.ownerId, id)))
-      .all(),
-  });
-});
+export const GET = handler(
+  async (request: Request) => {
+    const p = new URL(request.url).searchParams;
+    const type = p.get("type") ?? "",
+      id = p.get("id") ?? "";
+    requireValue(await owner(type, id), "Attachment owner not found.");
+    return ok({
+      attachments: await db
+        .select({
+          id: attachments.id,
+          name: attachments.name,
+          mime: attachments.mime,
+          size: attachments.size,
+        })
+        .from(attachments)
+        .where(and(eq(attachments.ownerType, type), eq(attachments.ownerId, id)))
+        .all(),
+    });
+  },
+  { public: true },
+);
 
 export const POST = handler(async (request: Request) => {
   requireValue(

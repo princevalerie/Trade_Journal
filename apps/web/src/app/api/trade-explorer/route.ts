@@ -6,28 +6,31 @@ import { getTimeZone } from "@/server/settings";
 import { queryTrades } from "@/server/trades-query";
 import { savedEstimates } from "@/server/market-data/estimates";
 
-export const GET = handler(async (request: Request) => {
-  const { trades } = await queryTrades(readFilters(new URL(request.url).searchParams));
-  const timeZone = await getTimeZone();
-  const rawAccounts = await db
-    .select({ id: accounts.id, currency: accounts.currency })
-    .from(accounts)
-    .all();
-  const currencies = new Map(rawAccounts.map((account) => [account.id, account.currency]));
-  const estimates = await savedEstimates(trades);
-  return ok({
-    points: tradeExplorerPoints(trades, timeZone).map((point) => ({
-      ...point,
-      mae: estimates.get(point.key)?.estimate.mae ?? null,
-      mfe: estimates.get(point.key)?.estimate.mfe ?? null,
-    })),
-    currencies: [
-      ...new Set(
-        trades
-          .filter((trade) => trade.status !== "open" && trade.closedAt)
-          .map((trade) => currencies.get(trade.accountId) ?? "USD"),
-      ),
-    ],
-    timeZone,
-  });
-});
+export const GET = handler(
+  async (request: Request) => {
+    const { trades } = await queryTrades(readFilters(new URL(request.url).searchParams));
+    const timeZone = await getTimeZone();
+    const rawAccounts = await db
+      .select({ id: accounts.id, currency: accounts.currency })
+      .from(accounts)
+      .all();
+    const currencies = new Map(rawAccounts.map((account) => [account.id, account.currency]));
+    const estimates = await savedEstimates(trades);
+    return ok({
+      points: tradeExplorerPoints(trades, timeZone).map((point) => ({
+        ...point,
+        mae: estimates.get(point.key)?.estimate.mae ?? null,
+        mfe: estimates.get(point.key)?.estimate.mfe ?? null,
+      })),
+      currencies: [
+        ...new Set(
+          trades
+            .filter((trade) => trade.status !== "open" && trade.closedAt)
+            .map((trade) => currencies.get(trade.accountId) ?? "USD"),
+        ),
+      ],
+      timeZone,
+    });
+  },
+  { public: true },
+);

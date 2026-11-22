@@ -36,10 +36,10 @@ function Settings() {
 
   useEffect(() => {
     if (data) {
-      setTimeZone(data.timeZone);
-      setImportTimeZone(data.importTimeZone);
+      setTimeZone(data.timeZone ?? "");
+      setImportTimeZone(data.importTimeZone ?? "");
       setMultipliers(
-        Object.entries(data.multipliers)
+        Object.entries(data.multipliers ?? {})
           .map(([symbol, multiplier]) => `${symbol}=${multiplier}`)
           .join("\n"),
       );

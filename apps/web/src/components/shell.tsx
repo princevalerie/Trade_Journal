@@ -23,6 +23,9 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   X,
+  Lock,
+  LogOut,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ValburyMark } from "@/components/valbury-mark";
@@ -31,6 +34,7 @@ import { ThemeToggle } from "./theme";
 import { PageTransition } from "./page-transition";
 import { Button } from "./ui/button";
 import { HoverHint } from "./ui/tooltip";
+import { postJson, useApi } from "@/lib/use-api";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -50,6 +54,8 @@ const NAV_SETUP = [
   { href: "/accounts", label: "Accounts", icon: Wallet },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
+
+const PUBLIC_HREFS = new Set(["/", "/calendar", "/journal", "/trades", "/reports"]);
 
 const SIDEBAR_COLLAPSED_KEY = "journal-sidebar-collapsed-v1";
 
@@ -91,6 +97,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarReady, setSidebarReady] = useState(false);
+
+  const { data: auth } = useApi<{ authenticated: boolean; configured: boolean }>("/api/auth");
+  const isAdmin = auth?.authenticated ?? false;
+
   useEffect(() => setMenuOpen(false), [pathname]);
   useEffect(() => {
     const desktop = window.matchMedia("(min-width: 1024px)");
@@ -128,6 +138,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     window.addEventListener("keydown", shortcut);
     return () => window.removeEventListener("keydown", shortcut);
   }, []);
+
   function toggleSidebar() {
     setSidebarCollapsed((collapsed) => {
       const next = !collapsed;
@@ -139,6 +150,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       return next;
     });
   }
+
   const filterQuery = new URLSearchParams();
   for (const key of FILTER_KEYS) {
     const value = search.get(key);
@@ -146,6 +158,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
   }
   if (search.get("range")) filterQuery.set("range", search.get("range")!);
   if (pathname === "/login") return <>{children}</>;
+
+  const visibleNav = isAdmin ? NAV : NAV.filter((item) => PUBLIC_HREFS.has(item.href));
+
   const navigation = (collapsed = false) => (
     <nav
       aria-label="Journal navigation"
@@ -154,7 +169,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         if ((event.target as HTMLElement).closest("a")) setMenuOpen(false);
       }}
     >
-      {NAV.map(({ href, label, icon }) => (
+      {visibleNav.map(({ href, label, icon }) => (
         <NavLink
           key={href}
           href={href === "/prop-firms" ? href : filterQuery.size ? `${href}?${filterQuery}` : href}
@@ -164,35 +179,84 @@ export function Shell({ children }: { children: React.ReactNode }) {
           active={href === "/" ? pathname === "/" : pathname.startsWith(href)}
         />
       ))}
-      <div className="!my-3 border-t" />
-      {NAV_SETUP.map(({ href, label, icon }) => (
-        <NavLink
-          key={href}
-          href={filterQuery.size ? `${href}?${filterQuery}` : href}
-          label={label}
-          icon={icon}
-          collapsed={collapsed}
-          active={pathname.startsWith(href)}
-        />
-      ))}
+      {isAdmin && (
+        <>
+          <div className="!my-3 border-t" />
+          {NAV_SETUP.map(({ href, label, icon }) => (
+            <NavLink
+              key={href}
+              href={filterQuery.size ? `${href}?${filterQuery}` : href}
+              label={label}
+              icon={icon}
+              collapsed={collapsed}
+              active={pathname.startsWith(href)}
+            />
+          ))}
+        </>
+      )}
     </nav>
   );
-  const footer = (
-    <div className="journal-sidebar-footer space-y-1 border-t p-3 text-xs text-muted-foreground">
-      <div>
-        Open source ·{" "}
-        <a
-          href="https://github.com/princevalerie/Trade_Journal"
-          className="underline underline-offset-2 hover:text-foreground"
-          target="_blank"
-          rel="noreferrer"
-        >
-          GitHub
-        </a>
+
+  const footer = (collapsed = false) => (
+    <div className="journal-sidebar-footer space-y-2 border-t p-3 text-xs text-muted-foreground">
+      {isAdmin ? (
+        <div className="flex items-center justify-between gap-1">
+          <HoverHint content={collapsed ? "Admin Mode Active" : null} side="right">
+            <div className="flex items-center gap-1.5 font-medium text-emerald-500">
+              <ShieldCheck className="h-4 w-4 shrink-0" />
+              <span className="journal-sidebar-label">Admin Mode</span>
+            </div>
+          </HoverHint>
+          <HoverHint content={collapsed ? "Logout" : null} side="right">
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await postJson("/api/auth", undefined, "DELETE");
+                } catch {
+                  // ignore
+                }
+                window.location.href = "/";
+              }}
+              className="flex items-center gap-1 text-muted-foreground hover:text-destructive transition-colors text-xs"
+              title="Logout Admin"
+            >
+              <LogOut className="h-3.5 w-3.5 shrink-0" />
+              <span className="journal-sidebar-label">Logout</span>
+            </button>
+          </HoverHint>
+        </div>
+      ) : (
+        <div>
+          <HoverHint content={collapsed ? "Admin Login" : null} side="right">
+            <Link
+              href="/login"
+              className="flex items-center gap-1.5 font-medium text-muted-foreground hover:text-foreground transition-colors"
+              title="Admin Login"
+            >
+              <Lock className="h-3.5 w-3.5 shrink-0" />
+              <span className="journal-sidebar-label">Admin Login</span>
+            </Link>
+          </HoverHint>
+        </div>
+      )}
+      <div className="pt-1 text-[11px] leading-tight text-muted-foreground/80">
+        <div>
+          Open source ·{" "}
+          <a
+            href="https://github.com/princevalerie/Trade_Journal"
+            className="underline underline-offset-2 hover:text-foreground"
+            target="_blank"
+            rel="noreferrer"
+          >
+            GitHub
+          </a>
+        </div>
+        <div>Not investment advice.</div>
       </div>
-      <div>Not investment advice.</div>
     </div>
   );
+
   return (
     <div className="journal-shell min-h-dvh lg:flex">
       <header className="journal-mobile-header sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/95 px-3 backdrop-blur lg:hidden">
@@ -233,7 +297,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <div className="border-t p-3">
                 <PrivacyToggle />
               </div>
-              {footer}
+              {footer()}
             </DialogPrimitive.Content>
           </DialogPrimitive.Portal>
         </DialogPrimitive.Root>
@@ -284,7 +348,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <PrivacyToggle iconOnly={sidebarCollapsed} />
           </div>
         </div>
-        {footer}
+        {footer(sidebarCollapsed)}
       </aside>
       <PageTransition>{children}</PageTransition>
     </div>

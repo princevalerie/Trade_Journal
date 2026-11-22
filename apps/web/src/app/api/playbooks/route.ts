@@ -3,21 +3,24 @@ import { db, playbooks, trades } from "@/db";
 import { bad, handler, ok } from "@/server/api";
 import { newId, nowIso } from "@/server/ids";
 
-export const GET = handler(async () => {
-  const rows = await db.select().from(playbooks).orderBy(asc(playbooks.createdAt)).all();
-  const counts = new Map<string, number>();
-  const allTradePlaybooks = await db.select({ playbookId: trades.playbookId }).from(trades).all();
-  for (const trade of allTradePlaybooks) {
-    if (trade.playbookId) counts.set(trade.playbookId, (counts.get(trade.playbookId) ?? 0) + 1);
-  }
-  return ok({
-    playbooks: rows.map((row) => ({
-      ...row,
-      rules: JSON.parse(row.rulesJson) as string[],
-      tradeCount: counts.get(row.id) ?? 0,
-    })),
-  });
-});
+export const GET = handler(
+  async () => {
+    const rows = await db.select().from(playbooks).orderBy(asc(playbooks.createdAt)).all();
+    const counts = new Map<string, number>();
+    const allTradePlaybooks = await db.select({ playbookId: trades.playbookId }).from(trades).all();
+    for (const trade of allTradePlaybooks) {
+      if (trade.playbookId) counts.set(trade.playbookId, (counts.get(trade.playbookId) ?? 0) + 1);
+    }
+    return ok({
+      playbooks: rows.map((row) => ({
+        ...row,
+        rules: JSON.parse(row.rulesJson) as string[],
+        tradeCount: counts.get(row.id) ?? 0,
+      })),
+    });
+  },
+  { public: true },
+);
 
 export const POST = handler(async (request: Request) => {
   const body = (await request.json()) as { name?: string; description?: string; rules?: string[] };

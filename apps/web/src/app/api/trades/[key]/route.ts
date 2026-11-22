@@ -9,31 +9,34 @@ import { getTimeZone } from "@/server/settings";
 
 type Params = { params: Promise<{ key: string }> };
 
-export const GET = handler(async (_request: Request, { params }: Params) => {
-  const { key } = await params;
-  const row = await getTradeByKey(key);
-  if (!row) return bad("Trade not found", 404);
-  const trade = rowToTrade(row, await context());
-  const fills = await listExecutions(row.accountId, trade.executionIds);
-  const acc = await db
-    .select({ currency: accounts.currency })
-    .from(accounts)
-    .where(eq(accounts.id, row.accountId))
-    .get();
-  return ok({
-    timeZone: await getTimeZone(),
-    trade: {
-      ...row,
-      status: trade.status,
-      riskAmount: tradeRisk(trade),
-      realizedR: tradeR(trade),
-      plannedR: plannedR(trade),
-      contractMultiplier: trade.contractMultiplier ?? null,
-      currency: acc?.currency ?? "USD",
-    },
-    executions: fills,
-  });
-});
+export const GET = handler(
+  async (_request: Request, { params }: Params) => {
+    const { key } = await params;
+    const row = await getTradeByKey(key);
+    if (!row) return bad("Trade not found", 404);
+    const trade = rowToTrade(row, await context());
+    const fills = await listExecutions(row.accountId, trade.executionIds);
+    const acc = await db
+      .select({ currency: accounts.currency })
+      .from(accounts)
+      .where(eq(accounts.id, row.accountId))
+      .get();
+    return ok({
+      timeZone: await getTimeZone(),
+      trade: {
+        ...row,
+        status: trade.status,
+        riskAmount: tradeRisk(trade),
+        realizedR: tradeR(trade),
+        plannedR: plannedR(trade),
+        contractMultiplier: trade.contractMultiplier ?? null,
+        currency: acc?.currency ?? "USD",
+      },
+      executions: fills,
+    });
+  },
+  { public: true },
+);
 
 interface AnnotateBody {
   notes?: string | null;

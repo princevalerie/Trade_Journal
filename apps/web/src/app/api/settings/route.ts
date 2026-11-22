@@ -80,25 +80,28 @@ export const PATCH = handler(async (request: Request) => {
       ),
       "Contract multipliers must be positive numbers.",
     );
-  await db.transaction(async () => {
-    // A display-only change must not silently alter the legacy import default.
-    if (body.timeZone !== undefined || body.importTimeZone !== undefined)
-      await setSetting("importTimeZone", body.importTimeZone ?? (await getImportTimeZone()));
-    if (body.timeZone !== undefined) await setSetting("timeZone", body.timeZone);
-  });
-  if (body.multipliers !== undefined)
-    await db.transaction(async () => {
-      await setSetting("multipliers", JSON.stringify(body.multipliers));
-      for (const account of await db.select({ id: accounts.id }).from(accounts).all())
-        await rebuildAccount(account.id);
-    });
-  await db.transaction(async () => {
-    for (const id of AI_PROVIDERS) {
-      const key = body[`${id}Key`];
-      if (key !== undefined) await setAiKey(id, key);
+  // A display-only change must not silently alter the legacy import default.
+  if (body.timeZone !== undefined || body.importTimeZone !== undefined) {
+    await setSetting("importTimeZone", body.importTimeZone ?? (await getImportTimeZone()));
+  }
+  if (body.timeZone !== undefined) {
+    await setSetting("timeZone", body.timeZone);
+  }
+
+  if (body.multipliers !== undefined) {
+    await setSetting("multipliers", JSON.stringify(body.multipliers));
+    const allAccounts = await db.select({ id: accounts.id }).from(accounts).all();
+    for (const account of allAccounts) {
+      await rebuildAccount(account.id);
     }
-    if (body.aiProvider !== undefined) await setSetting("aiProvider", body.aiProvider);
-    if (body.aiModel !== undefined) await setSetting(aiModelSetting(provider), body.aiModel.trim());
-  });
+  }
+
+  for (const id of AI_PROVIDERS) {
+    const key = body[`${id}Key`];
+    if (key !== undefined) await setAiKey(id, key);
+  }
+  if (body.aiProvider !== undefined) await setSetting("aiProvider", body.aiProvider);
+  if (body.aiModel !== undefined) await setSetting(aiModelSetting(provider), body.aiModel.trim());
+
   return ok({ saved: true });
 });

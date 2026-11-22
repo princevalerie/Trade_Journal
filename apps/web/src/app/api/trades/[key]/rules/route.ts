@@ -14,24 +14,27 @@ async function source(key: string) {
   return { book, rules: book ? [...new Set(JSON.parse(book.rulesJson) as string[])] : [] };
 }
 
-export const GET = handler(async (_request: Request, { params }: Context) => {
-  const key = (await params).key;
-  const { book, rules } = await source(key);
-  const checks = book
-    ? await db
-        .select()
-        .from(tradeRuleChecks)
-        .where(and(eq(tradeRuleChecks.tradeKey, key), eq(tradeRuleChecks.playbookId, book.id)))
-        .all()
-    : [];
-  return ok({
-    name: book?.name ?? null,
-    rules: rules.map((rule) => ({
-      rule,
-      followed: checks.find((c) => c.rule === rule)?.followed ?? null,
-    })),
-  });
-});
+export const GET = handler(
+  async (_request: Request, { params }: Context) => {
+    const key = (await params).key;
+    const { book, rules } = await source(key);
+    const checks = book
+      ? await db
+          .select()
+          .from(tradeRuleChecks)
+          .where(and(eq(tradeRuleChecks.tradeKey, key), eq(tradeRuleChecks.playbookId, book.id)))
+          .all()
+      : [];
+    return ok({
+      name: book?.name ?? null,
+      rules: rules.map((rule) => ({
+        rule,
+        followed: checks.find((c) => c.rule === rule)?.followed ?? null,
+      })),
+    });
+  },
+  { public: true },
+);
 
 export const POST = handler(async (request: Request, { params }: Context) => {
   const key = (await params).key,

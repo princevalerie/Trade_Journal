@@ -5,30 +5,33 @@ import { encryptJson } from "@/server/crypto";
 import { newId, nowIso } from "@/server/ids";
 import { syncAccount } from "@/server/sync";
 
-export const GET = handler(async (request: Request) => {
-  if (new URL(request.url).searchParams.get("summary") === "1") {
+export const GET = handler(
+  async (request: Request) => {
+    if (new URL(request.url).searchParams.get("summary") === "1") {
+      return ok({
+        accounts: await db
+          .select({
+            id: accounts.id,
+            name: accounts.name,
+            broker: accounts.broker,
+            archivedAt: accounts.archivedAt,
+          })
+          .from(accounts)
+          .orderBy(asc(accounts.createdAt))
+          .all(),
+      });
+    }
+    const rows = await db.select().from(accounts).orderBy(asc(accounts.createdAt)).all();
     return ok({
-      accounts: await db
-        .select({
-          id: accounts.id,
-          name: accounts.name,
-          broker: accounts.broker,
-          archivedAt: accounts.archivedAt,
-        })
-        .from(accounts)
-        .orderBy(asc(accounts.createdAt))
-        .all(),
+      accounts: rows.map(({ credentialsEnc, ...safe }) => ({
+        ...safe,
+        connected: credentialsEnc !== null,
+        snapshot: safe.snapshotJson ? JSON.parse(safe.snapshotJson) : null,
+      })),
     });
-  }
-  const rows = await db.select().from(accounts).orderBy(asc(accounts.createdAt)).all();
-  return ok({
-    accounts: rows.map(({ credentialsEnc, ...safe }) => ({
-      ...safe,
-      connected: credentialsEnc !== null,
-      snapshot: safe.snapshotJson ? JSON.parse(safe.snapshotJson) : null,
-    })),
-  });
-});
+  },
+  { public: true },
+);
 
 interface CreateBody {
   name?: string;

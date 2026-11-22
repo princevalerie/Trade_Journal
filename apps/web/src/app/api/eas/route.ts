@@ -8,7 +8,8 @@ const list = (v: string | null | undefined): string[] =>
     .map((s) => s.trim())
     .filter(Boolean);
 
-export const GET = handler(async (req: Request) => {
+export const GET = handler(
+  async (req: Request) => {
   const url = new URL(req.url);
   const accountsParam = url.searchParams.get("accounts");
   const accountList = list(accountsParam);
@@ -171,4 +172,4 @@ export const GET = handler(async (req: Request) => {
     totalEa: eaCount,
     totalTrades: allTrades.length,
   });
-});
+}, { public: true });

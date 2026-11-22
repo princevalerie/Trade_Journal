@@ -9,34 +9,37 @@ import { queryTrades } from "@/server/trades-query";
 
 type Params = { params: Promise<{ date: string }> };
 
-export const GET = handler(async (request: Request, { params }: Params) => {
-  const { date } = await params;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return bad("date must be YYYY-MM-DD");
-  const url = new URL(request.url);
-  const timeZone = await getTimeZone();
+export const GET = handler(
+  async (request: Request, { params }: Params) => {
+    const { date } = await params;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return bad("date must be YYYY-MM-DD");
+    const url = new URL(request.url);
+    const timeZone = await getTimeZone();
 
-  const { rows, trades } = await queryTrades(readFilters(url.searchParams));
-  const dayTradeIndexes = trades
-    .map((trade, index) => ({ trade, index }))
-    .filter(({ trade }) => trade.closedAt && dayKeyOf(trade.closedAt, timeZone) === date);
-  const dayTrades = dayTradeIndexes.map(({ trade }) => trade);
+    const { rows, trades } = await queryTrades(readFilters(url.searchParams));
+    const dayTradeIndexes = trades
+      .map((trade, index) => ({ trade, index }))
+      .filter(({ trade }) => trade.closedAt && dayKeyOf(trade.closedAt, timeZone) === date);
+    const dayTrades = dayTradeIndexes.map(({ trade }) => trade);
 
-  // Intraday curve needs exit timestamps — one fetch per involved account.
-  const times = new Map<string, string>();
-  for (const accountId of new Set(dayTrades.map((trade) => trade.accountId))) {
-    const fills = await db.select().from(executions).where(eq(executions.accountId, accountId)).all();
-    for (const fill of fills) times.set(fill.id, fill.executedAt);
-  }
+    // Intraday curve needs exit timestamps — one fetch per involved account.
+    const times = new Map<string, string>();
+    for (const accountId of new Set(dayTrades.map((trade) => trade.accountId))) {
+      const fills = await db.select().from(executions).where(eq(executions.accountId, accountId)).all();
+      for (const fill of fills) times.set(fill.id, fill.executedAt);
+    }
 
-  const note = await db.select().from(journalDays).where(eq(journalDays.date, date)).get();
-  return ok({
-    date,
-    metrics: computeMetrics(dayTrades, { timeZone }),
-    trades: dayTradeIndexes.map(({ index }) => rows[index]),
-    intraday: intradayCurve(dayTrades, times, date, timeZone),
-    note: note?.note ?? "",
-  });
-});
+    const note = await db.select().from(journalDays).where(eq(journalDays.date, date)).get();
+    return ok({
+      date,
+      metrics: computeMetrics(dayTrades, { timeZone }),
+      trades: dayTradeIndexes.map(({ index }) => rows[index]),
+      intraday: intradayCurve(dayTrades, times, date, timeZone),
+      note: note?.note ?? "",
+    });
+  },
+  { public: true },
+);
 
 export const PUT = handler(async (request: Request, { params }: Params) => {
   const { date } = await params;
