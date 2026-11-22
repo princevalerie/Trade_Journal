@@ -3,8 +3,8 @@
 //|                 Trade Journal Multi-Account Realtime & History   |
 //|                Institutional Edition for MetaTrader 5            |
 //+------------------------------------------------------------------+
-#property copyright "Trade Journal & LuxAlgo Open Source"
-#property link      "https://github.com/LuxAlgo/trade-journal"
+#property copyright "Trade Journal & PrinceAlgo"
+#property link      "https://journal-valbury-prince.vercel.app"
 #property version   "3.00"
 #property description "Complete Real-time & History Sync with MAE/MFE, Account Mode/Leverage, and Auto Chart Screenshots"
 #property strict
@@ -19,9 +19,9 @@ enum ENUM_SYNC_SCOPE
 
 //--- Input Parameters
 input group "=== 1. Journal Backend Connection ==="
-input string            InpApiUrl          = "http://127.0.0.1:3000/api/webhooks/mt5"; // Webhook URL
-input string            InpApiKey          = "";                                       // API Secret Key (MT_WEBHOOK_SECRET)
-input string            InpAccountName     = "";                                       // Custom Account Name (optional)
+input string            InpApiUrl          = "https://journal-valbury-prince.vercel.app/api/webhooks/mt5"; // Webhook URL
+input string            InpApiKey          = "Valbury05@";                                             // API Secret Key (MT_WEBHOOK_SECRET)
+input string            InpAccountName     = "";                                                       // Custom Account Name (optional)
 
 input group "=== 2. History Synchronization ==="
 input ENUM_SYNC_SCOPE   InpSyncScope       = SYNC_ALL_HISTORY;                         // History Sync Scope
