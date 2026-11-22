@@ -478,6 +478,13 @@ string BuildDealJson(ulong ticket, string screenshotBase64 = "")
    long magic    = HistoryDealGetInteger(ticket, DEAL_MAGIC);
    string commt  = HistoryDealGetString(ticket, DEAL_COMMENT);
 
+   // Fallback for magic & comment: check order if deal didn't have it
+   if(magic == 0 && orderId > 0 && HistoryOrderSelect(orderId))
+      magic = HistoryOrderGetInteger(orderId, ORDER_MAGIC);
+
+   if(StringLen(commt) == 0 && orderId > 0 && HistoryOrderSelect(orderId))
+      commt = HistoryOrderGetString(orderId, ORDER_COMMENT);
+
    // Extract Stop Loss, Take Profit, Order Type and Slippage
    double orderSl = 0.0;
    double orderTp = 0.0;

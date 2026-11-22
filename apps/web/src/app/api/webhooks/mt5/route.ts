@@ -313,8 +313,14 @@ export const POST = handler(
       if (exec.magic !== undefined && exec.magic !== 0) {
         data.tags.add("EA");
         data.tags.add(`Magic:${exec.magic}`);
+      } else if (exec.reason && exec.reason.toUpperCase().includes("EXPERT")) {
+        data.tags.add("EA");
       } else if (!execEaName) {
         data.tags.add("Manual");
+      }
+
+      if (data.tags.has("EA")) {
+        data.tags.delete("Manual");
       }
 
       if (exec.slippagePips && Math.abs(exec.slippagePips) >= 0.1) {
