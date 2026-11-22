@@ -1,3 +1,4 @@
+blockExoticSubdeps: false
 packages:
   - "packages/*"
   - "apps/*"
