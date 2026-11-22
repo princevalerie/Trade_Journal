@@ -29,14 +29,14 @@ export const POST = handler(
     requireValue(body && typeof body.provider === "string", "Choose a market data provider.");
     requireValue(
       typeof body.symbol === "string" &&
-        body.symbol.trim().length > 0 &&
-        body.symbol.length <= 100 &&
-        !/[\x00-\x1f]/.test(body.symbol),
+      body.symbol.trim().length > 0 &&
+      body.symbol.length <= 100 &&
+      !/[\x00-\x1f]/.test(body.symbol),
       "Enter the provider's exact instrument symbol.",
     );
     requireValue(
       body.dataset === undefined ||
-        (typeof body.dataset === "string" && /^[a-zA-Z0-9_-]{0,80}$/.test(body.dataset)),
+      (typeof body.dataset === "string" && /^[a-zA-Z0-9_-]{0,80}$/.test(body.dataset)),
       "Invalid dataset.",
     );
     requireValue(isResolution(body.resolution), "Choose a supported candle resolution.");
@@ -69,7 +69,7 @@ export const POST = handler(
       if (provider.id === "alpaca")
         requireValue(
           row.assetClass == null ||
-            (body.dataset === "crypto" ? row.assetClass === "crypto" : row.assetClass === "equity"),
+          (body.dataset === "crypto" ? row.assetClass === "crypto" : row.assetClass === "equity"),
           "Choose the Alpaca dataset that matches this trade's asset class.",
         );
       if (provider.id === "oanda")

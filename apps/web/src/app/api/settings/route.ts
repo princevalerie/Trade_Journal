@@ -46,7 +46,7 @@ export const PATCH = handler(async (request: Request) => {
   if (body.aiModel !== undefined)
     requireValue(
       typeof body.aiModel === "string" &&
-        /^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,199}$/.test(body.aiModel.trim()),
+      /^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,199}$/.test(body.aiModel.trim()),
       "Enter a valid model ID.",
     );
   for (const id of AI_PROVIDERS) {
@@ -54,10 +54,10 @@ export const PATCH = handler(async (request: Request) => {
     if (key === undefined) continue;
     requireValue(
       key === null ||
-        (typeof key === "string" &&
-          key.trim().length > 0 &&
-          key.length <= 4096 &&
-          !/\s/.test(key.trim())),
+      (typeof key === "string" &&
+        key.trim().length > 0 &&
+        key.length <= 4096 &&
+        !/\s/.test(key.trim())),
       `Enter a valid ${AI_PROVIDER_NAMES[id]} API key.`,
     );
     requireValue(
@@ -74,10 +74,10 @@ export const PATCH = handler(async (request: Request) => {
   if (body.multipliers !== undefined)
     requireValue(
       body.multipliers &&
-        typeof body.multipliers === "object" &&
-        Object.values(body.multipliers).every(
-          (n) => typeof n === "number" && Number.isFinite(n) && n > 0,
-        ),
+      typeof body.multipliers === "object" &&
+      Object.values(body.multipliers).every(
+        (n) => typeof n === "number" && Number.isFinite(n) && n > 0,
+      ),
       "Contract multipliers must be positive numbers.",
     );
   await db.transaction(async () => {
