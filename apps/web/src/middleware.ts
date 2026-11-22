@@ -42,21 +42,22 @@ export const middleware = (request: NextRequest) => {
   const cookie = request.cookies.get("journal_session")?.value;
   if (!cookie) {
     if (pathname.startsWith("/api/")) {
-      // If it's a public GET API route, allow it so handler can process it
+      // If it's a public GET API route or public AI ask on report, allow it so handler can process it
       const isPublicApi =
-        request.method === "GET" &&
-        (pathname.startsWith("/api/trades") ||
-          pathname.startsWith("/api/stats") ||
-          pathname.startsWith("/api/performance-trends") ||
-          pathname.startsWith("/api/analysis") ||
-          pathname.startsWith("/api/calendar") ||
-          pathname.startsWith("/api/journal") ||
-          pathname.startsWith("/api/attachments") ||
-          pathname.startsWith("/api/accounts") ||
-          pathname.startsWith("/api/playbooks") ||
-          pathname.startsWith("/api/adherence") ||
-          pathname.startsWith("/api/trade-explorer") ||
-          pathname.startsWith("/api/eas"));
+        (request.method === "GET" &&
+          (pathname.startsWith("/api/trades") ||
+            pathname.startsWith("/api/stats") ||
+            pathname.startsWith("/api/performance-trends") ||
+            pathname.startsWith("/api/analysis") ||
+            pathname.startsWith("/api/calendar") ||
+            pathname.startsWith("/api/journal") ||
+            pathname.startsWith("/api/attachments") ||
+            pathname.startsWith("/api/accounts") ||
+            pathname.startsWith("/api/playbooks") ||
+            pathname.startsWith("/api/adherence") ||
+            pathname.startsWith("/api/trade-explorer") ||
+            pathname.startsWith("/api/eas"))) ||
+        (request.method === "POST" && pathname === "/api/ai/ask");
 
       if (isPublicApi) {
         return NextResponse.next();
