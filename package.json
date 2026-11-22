@@ -8,7 +8,7 @@
     "url": "git+https://github.com/LuxAlgo/trade-journal.git"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=18"
   },
   "packageManager": "pnpm@11.0.8",
   "scripts": {
