@@ -1,5 +1,5 @@
 /* Adapted from ChristopherDownie/prop-firm-sim, commit 2aedb92208ab34ef7a1d0e42c290b8b78bae081f.
- * Copyright (c) 2026 LuxAlgo. MIT license: packages/importers/LICENSE.
+ * Copyright (c) 2026 PrinceAlgo. MIT license: packages/importers/LICENSE.
  * Journal adaptation keeps history parsing separate from existing fill importers. */
 
 /* History parsing adapted from the simulator: text -> sections/headers ->
@@ -156,8 +156,8 @@ function validateTrades(trades: ImportedTrade[], issues: ImportIssue[]): void {
               "warning",
               "direction-pnl-mismatch",
               `Trade ${trade.id ?? `at line ${trade.sourceRows[0] ?? "?"}`}: a ${trade.direction} from ` +
-                `${trade.entryPrice} to ${trade.exitPrice} should ${move > 0 ? "win" : "lose"}, but P&L is ` +
-                `${trade.pnl}. The direction or price columns may be mapped wrong.`,
+              `${trade.entryPrice} to ${trade.exitPrice} should ${move > 0 ? "win" : "lose"}, but P&L is ` +
+              `${trade.pnl}. The direction or price columns may be mapped wrong.`,
               trade.sourceRows[0] !== undefined ? { row: trade.sourceRows[0] } : {},
             ),
           );
@@ -171,7 +171,7 @@ function validateTrades(trades: ImportedTrade[], issues: ImportIssue[]): void {
         "warning",
         "direction-pnl-mismatch",
         `${mismatches} trades total have a P&L sign that contradicts their direction and prices - ` +
-          "review the column mapping before trusting this import.",
+        "review the column mapping before trusting this import.",
       ),
     );
   }
@@ -240,8 +240,8 @@ function chooseStatementSection(
             "info",
             "row-recovered",
             `HTML statement: the section headed at line ${section.line} (${section.records.length} rows) ` +
-              `matched "${adapter.label}"; other sections (orders, deals, open positions, summaries) ` +
-              "were not imported as trades.",
+            `matched "${adapter.label}"; other sections (orders, deals, open positions, summaries) ` +
+            "were not imported as trades.",
           ),
         );
         return {
@@ -263,7 +263,7 @@ function chooseStatementSection(
       "info",
       "row-recovered",
       `HTML table detected: the section headed at line ${section.line} (${section.records.length} rows) ` +
-        "was selected by its column names.",
+      "was selected by its column names.",
     ),
   );
   return {
@@ -292,8 +292,8 @@ export function importTradeHistory(rawText: string, options: ImportOptions = {})
         "warning",
         "malformed-csv",
         "The file appears to be UTF-16 read as UTF-8 (MetaTrader saves reports that way); it was " +
-          "repaired automatically. Non-ASCII symbol names may look garbled - if so, re-save the " +
-          "file as UTF-8.",
+        "repaired automatically. Non-ASCII symbol names may look garbled - if so, re-save the " +
+        "file as UTF-8.",
       ),
     );
   }
@@ -364,7 +364,7 @@ export function importTradeHistory(rawText: string, options: ImportOptions = {})
           "info",
           "row-recovered",
           `The column header was found on line ${allRecords[located.headerIndex]!.line}; ` +
-            `${located.headerIndex} preamble row(s) above it were ignored.`,
+          `${located.headerIndex} preamble row(s) above it were ignored.`,
         ),
       );
     }
@@ -383,9 +383,9 @@ export function importTradeHistory(rawText: string, options: ImportOptions = {})
         "error",
         "no-header",
         "No column header row was found, so the columns cannot be interpreted. " +
-          GENERIC_FORMAT_ADVICE +
-          " Alternatively, provide a manual column mapping. If this was meant to be a plain " +
-          "R-multiple series, it contains tokens that are not numbers.",
+        GENERIC_FORMAT_ADVICE +
+        " Alternatively, provide a manual column mapping. If this was meant to be a plain " +
+        "R-multiple series, it contains tokens that are not numbers.",
       ),
     );
     return emptyResult(
@@ -439,7 +439,7 @@ export function importTradeHistory(rawText: string, options: ImportOptions = {})
           "error",
           "unsupported-format",
           `The columns (${header.join(", ")}) match no supported export signature. ` +
-            "Map the columns manually instead of relying on automatic detection.",
+          "Map the columns manually instead of relying on automatic detection.",
         ),
       );
       return {
@@ -483,10 +483,10 @@ export function importTradeHistory(rawText: string, options: ImportOptions = {})
         "error",
         "unmapped-required-fields",
         `A header row was detected (${header.join(", ")}), but no trades could be built from it. ` +
-          `Recognized columns: ${mapped.length > 0 ? mapped.join(", ") : "none"}. ` +
-          "A usable file needs either an R column, a P&L column, entry/exit prices, or fill rows " +
-          "(side, quantity, price). Map the columns manually if they are named unusually. " +
-          GENERIC_FORMAT_ADVICE,
+        `Recognized columns: ${mapped.length > 0 ? mapped.join(", ") : "none"}. ` +
+        "A usable file needs either an R column, a P&L column, entry/exit prices, or fill rows " +
+        "(side, quantity, price). Map the columns manually if they are named unusually. " +
+        GENERIC_FORMAT_ADVICE,
       ),
     );
     format = { ...format, confidence: "low" };
@@ -512,7 +512,7 @@ export function importTradeHistory(rawText: string, options: ImportOptions = {})
           "warning",
           "duplicate-rows",
           `${duplicatesRemoved} duplicate trade(s) (same id or identical fields) were removed - ` +
-            "the file may contain the same history twice.",
+          "the file may contain the same history twice.",
         ),
       );
     }

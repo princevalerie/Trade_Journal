@@ -6,7 +6,7 @@ name: Release packages
 # cutting a GitHub Release is always safe.
 #
 # One-time setup per package on npmjs.com (Package Settings -> Trusted
-# Publisher -> GitHub Actions): org "LuxAlgo", repo "trade-journal",
+# Publisher -> GitHub Actions): org "PrinceAlgo", repo "Trade_Journal",
 # workflow filename "release.yml", and check "Allow npm publish".
 # Note: OIDC cannot create a brand-new package (npm/cli#8544), so the first
 # version of each package must be published once with credentials before

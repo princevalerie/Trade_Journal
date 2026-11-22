@@ -1,5 +1,5 @@
 /* Adapted from ChristopherDownie/prop-firm-sim, commit 2aedb92208ab34ef7a1d0e42c290b8b78bae081f.
- * Copyright (c) 2026 LuxAlgo. MIT license: packages/importers/LICENSE.
+ * Copyright (c) 2026 PrinceAlgo. MIT license: packages/importers/LICENSE.
  * Journal adaptation keeps history parsing separate from existing fill importers. */
 
 /*
@@ -142,8 +142,8 @@ function buildTradeFromGroup(
         "info",
         "pnl-derived-from-prices",
         `Trade ${id ?? `at line ${trade.sourceRows[0] ?? "?"}`}: P&L was computed from entry/exit prices × ` +
-          "quantity (assumes 1 currency unit per point per unit of quantity - correct for stocks/spot, " +
-          "NOT for futures or CFDs with a contract multiplier).",
+        "quantity (assumes 1 currency unit per point per unit of quantity - correct for stocks/spot, " +
+        "NOT for futures or CFDs with a contract multiplier).",
         trade.sourceRows[0] !== undefined ? { row: trade.sourceRows[0] } : {},
       ),
     );
@@ -155,7 +155,7 @@ function buildTradeFromGroup(
         "warning",
         "exit-before-entry",
         `Trade ${id ?? `at line ${trade.sourceRows[0] ?? "?"}`}: the exit timestamp precedes the entry ` +
-          "timestamp. Check the file's row pairing or date format.",
+        "timestamp. Check the file's row pairing or date format.",
         trade.sourceRows[0] !== undefined ? { row: trade.sourceRows[0] } : {},
       ),
     );
@@ -242,8 +242,8 @@ export function pairEvents(
           "warning",
           "trade-id-reused",
           `${reused.size} trade id(s) (${sample}${reused.size > 5 ? ", ..." : ""}) appear again after the ` +
-            "trade with that id was already closed. Each occurrence was imported as a separate trade; " +
-            "the file may combine several exports whose numbering restarts.",
+          "trade with that id was already closed. Each occurrence was imported as a separate trade; " +
+          "the file may combine several exports whose numbering restarts.",
         ),
       );
     }
@@ -260,7 +260,7 @@ export function pairEvents(
             "error",
             "ambiguous-mapping",
             `Trade id "${key}" spans multiple symbols (${[...symbols].join(", ")}); its rows were skipped. ` +
-              "The id column mapping is probably wrong.",
+            "The id column mapping is probably wrong.",
           ),
         );
         continue;
@@ -288,8 +288,8 @@ export function pairEvents(
       "warning",
       "row-recovered",
       "The file has entry/exit rows but no trade id column, so entries and exits were matched " +
-        "first-in-first-out within each symbol and direction. Verify a few reconstructed trades " +
-        "before trusting the result.",
+      "first-in-first-out within each symbol and direction. Verify a few reconstructed trades " +
+      "before trusting the result.",
     ),
   );
   const sorted = [...events].sort((a, b) => (a.time ?? 0) - (b.time ?? 0) || a.row - b.row);

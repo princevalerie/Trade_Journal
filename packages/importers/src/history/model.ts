@@ -1,5 +1,5 @@
 /* Adapted from ChristopherDownie/prop-firm-sim, commit 2aedb92208ab34ef7a1d0e42c290b8b78bae081f.
- * Copyright (c) 2026 LuxAlgo. MIT license: packages/importers/LICENSE.
+ * Copyright (c) 2026 PrinceAlgo. MIT license: packages/importers/LICENSE.
  * Journal adaptation keeps history parsing separate from existing fill importers. */
 
 import type { Execution } from "./reconstruct";

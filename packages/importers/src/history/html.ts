@@ -1,5 +1,5 @@
 /* Adapted from ChristopherDownie/prop-firm-sim, commit 2aedb92208ab34ef7a1d0e42c290b8b78bae081f.
- * Copyright (c) 2026 LuxAlgo. MIT license: packages/importers/LICENSE.
+ * Copyright (c) 2026 PrinceAlgo. MIT license: packages/importers/LICENSE.
  * Journal adaptation keeps history parsing separate from existing fill importers. */
 
 /*
@@ -113,7 +113,7 @@ export function extractHtmlTables(
         "warning",
         "malformed-csv",
         "The HTML file contains NUL bytes (it may be UTF-16); they were removed. " +
-          "If values look garbled, re-save the report as UTF-8.",
+        "If values look garbled, re-save the report as UTF-8.",
       ),
     );
     input = input.replaceAll("\0", "");
@@ -264,7 +264,7 @@ export function extractHtmlTables(
         "error",
         "unsupported-format",
         "The file looks like HTML, but no table rows could be extracted from it. " +
-          "Export the statement again, or save it as CSV.",
+        "Export the statement again, or save it as CSV.",
       ),
     );
   }

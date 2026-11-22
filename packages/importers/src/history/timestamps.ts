@@ -1,5 +1,5 @@
 /* Adapted from prop-firm-sim 2aedb922: epoch, ISO, MetaTrader, compact and
- * file-wide slash-date handling. Copyright (c) 2026 LuxAlgo, MIT.
+ * file-wide slash-date handling. Copyright (c) 2026 PrinceAlgo, MIT.
  * Uses the journal's timezone conversion for timestamps without offsets and
  * falls back to the journal's parser for every other layout it accepts. */
 import { parseTimestamp as journalTimestamp } from "../dates";

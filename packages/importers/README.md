@@ -1,6 +1,6 @@
 # @luxalgo/journal-importers
 
-Statement and export parsers for [Trade Journal](https://github.com/LuxAlgo/trade-journal), LuxAlgo's open-source trade journal. Zero runtime dependencies beyond `@luxalgo/journal-core`. Runs in Node and the browser.
+Statement and export parsers for [Trade Journal](https://github.com/princevalerie/Trade_Journal), PrinceAlgo's open-source trade journal. Zero runtime dependencies beyond `@luxalgo/journal-core`. Runs in Node and the browser.
 
 ```bash
 npm install @luxalgo/journal-importers
@@ -22,4 +22,4 @@ const parsed = parseAuto(fileText, { timeZone: "America/New_York" });
 - Handles quoted fields, BOM, `;` and tab delimiters, `$1,234.56` and `(45.20)` numbers, European decimals, timezone suffixes, and DST-safe naive-timestamp conversion.
 - TradeZella imports reconcile stated net P&L to the cent, so migrated history matches the trader's old numbers.
 
-Per-format validation status lives in [docs/importers.md](https://github.com/LuxAlgo/trade-journal/blob/main/docs/importers.md). Real export samples are the most valuable contribution. MIT.
+Per-format validation status lives in [docs/importers.md](https://github.com/princevalerie/Trade_Journal/blob/main/docs/importers.md). Real export samples are the most valuable contribution. MIT.

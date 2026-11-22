@@ -21,7 +21,7 @@ gate, and builds the packages and the app. Run them locally before pushing.
 
 - **Broker connectivity goes through `@luxalgo/broker-sdk`, never direct broker API
   code here.** Missing something? Propose it against
-  [broker-sdk](https://github.com/LuxAlgo/broker-sdk) instead of working around it.
+  [broker-sdk](https://github.com/princevalerie/Trade_Journal) instead of working around it.
 - **Analytics live in `packages/core`** as pure, unit-tested functions. The app renders;
   it doesn't compute.
 - **Tests defend product invariants, not implementations.** Titles read as plain

@@ -4,7 +4,7 @@
 
 Please do not open public issues for security vulnerabilities.
 
-Report privately via GitHub's vulnerability reporting on this repository: **Security → Report a vulnerability** (<https://github.com/LuxAlgo/trade-journal/security/advisories/new>).
+Report privately via GitHub's vulnerability reporting on this repository: **Security → Report a vulnerability** (<https://github.com/princevalerie/Trade_Journal/security/advisories/new>).
 
 You can expect an acknowledgment within a few business days. Please include reproduction steps and the affected version or commit.
 
