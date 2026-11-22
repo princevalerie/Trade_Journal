@@ -22,7 +22,6 @@ input group "=== 1. Journal Backend Connection ==="
 input string            InpApiUrl          = "https://journal-valbury-prince.vercel.app/api/webhooks/mt5"; // Webhook URL
 input string            InpApiKey          = "Valbury05@";                                             // API Secret Key (MT_WEBHOOK_SECRET)
 input string            InpAccountName     = "";                                                       // Custom Account Name (optional)
-input string            InpCustomEaName    = "";                                                       // Custom EA / Strategy Name (optional fallback)
 
 input group "=== 2. History Synchronization ==="
 input ENUM_SYNC_SCOPE   InpSyncScope       = SYNC_ALL_HISTORY;                         // History Sync Scope
@@ -547,9 +546,6 @@ string BuildDealJson(ulong ticket, string screenshotBase64 = "")
       }
    }
 
-   // 4. Optional custom EA name fallback
-   if(StringLen(commt) == 0 && StringLen(InpCustomEaName) > 0)
-      commt = InpCustomEaName;
 
    // Extract Exit Reason
    int reasonCode = (int)HistoryDealGetInteger(ticket, DEAL_REASON);

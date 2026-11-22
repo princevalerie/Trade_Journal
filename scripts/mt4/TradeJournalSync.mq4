@@ -22,7 +22,6 @@ enum ENUM_SYNC_SCOPE
 input string            InpApiUrl          = "https://journal-valbury-prince.vercel.app/api/webhooks/mt4"; // Webhook URL (Trade Journal proxy / server)
 input string            InpApiKey          = "Valbury05@";                                             // API Secret Key (MT_WEBHOOK_SECRET)
 input string            InpAccountName     = "";                                                       // Custom Account Name (optional)
-input string            InpCustomEaName    = "";                                                       // Custom EA / Strategy Name (optional fallback)
 
 //--- 2. History Synchronization ---
 input ENUM_SYNC_SCOPE   InpSyncScope       = SYNC_ALL_HISTORY;                         // History Sync Scope
@@ -433,7 +432,6 @@ string BuildTradeJson(int ticket, string screenshotBase64 = "")
    double tp      = OrderTakeProfit();
    long magic     = OrderMagicNumber();
    string commt   = OrderComment();
-   if(StringLen(commt) == 0 && StringLen(InpCustomEaName) > 0) commt = InpCustomEaName;
 
    // Determine exit reason from comment or prices
    string reason = "";
