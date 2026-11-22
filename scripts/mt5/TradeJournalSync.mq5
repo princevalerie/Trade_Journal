@@ -22,6 +22,7 @@ input group "=== 1. Journal Backend Connection ==="
 input string            InpApiUrl          = "https://journal-valbury-prince.vercel.app/api/webhooks/mt5"; // Webhook URL
 input string            InpApiKey          = "Valbury05@";                                             // API Secret Key (MT_WEBHOOK_SECRET)
 input string            InpAccountName     = "";                                                       // Custom Account Name (optional)
+input string            InpCustomEaName    = "";                                                       // Custom EA / Strategy Name (optional fallback)
 
 input group "=== 2. History Synchronization ==="
 input ENUM_SYNC_SCOPE   InpSyncScope       = SYNC_ALL_HISTORY;                         // History Sync Scope
@@ -481,21 +482,17 @@ string BuildDealJson(ulong ticket, string screenshotBase64 = "")
    long magic    = HistoryDealGetInteger(ticket, DEAL_MAGIC);
    string commt  = HistoryDealGetString(ticket, DEAL_COMMENT);
 
-   // Fallback for magic & comment: check order if deal didn't have it
-   if(magic == 0 && orderId > 0 && HistoryOrderSelect(orderId))
-      magic = HistoryOrderGetInteger(orderId, ORDER_MAGIC);
-
-   if(StringLen(commt) == 0 && orderId > 0 && HistoryOrderSelect(orderId))
-      commt = HistoryOrderGetString(orderId, ORDER_COMMENT);
-
    // Extract Stop Loss, Take Profit, Order Type and Slippage
    double orderSl = 0.0;
    double orderTp = 0.0;
    string orderTypeStr = "";
    double slippagePips = 0.0;
 
+   // 1. Check current deal's order
    if(orderId > 0 && HistoryOrderSelect(orderId))
    {
+      if(magic == 0) magic = HistoryOrderGetInteger(orderId, ORDER_MAGIC);
+      if(StringLen(commt) == 0) commt = HistoryOrderGetString(orderId, ORDER_COMMENT);
       orderSl = HistoryOrderGetDouble(orderId, ORDER_SL);
       orderTp = HistoryOrderGetDouble(orderId, ORDER_TP);
       double orderReqPrice = HistoryOrderGetDouble(orderId, ORDER_PRICE_OPEN);
@@ -519,6 +516,40 @@ string BuildDealJson(ulong ticket, string screenshotBase64 = "")
          }
       }
    }
+
+   // 2. In MT5, exit deals lose magic/SL/TP. Check the original position entry order (ticket == posId):
+   if(posId > 0 && HistoryOrderSelect(posId))
+   {
+      if(magic == 0) magic = HistoryOrderGetInteger(posId, ORDER_MAGIC);
+      if(StringLen(commt) == 0) commt = HistoryOrderGetString(posId, ORDER_COMMENT);
+      if(orderSl <= 0.0) orderSl = HistoryOrderGetDouble(posId, ORDER_SL);
+      if(orderTp <= 0.0) orderTp = HistoryOrderGetDouble(posId, ORDER_TP);
+   }
+
+   // 3. Scan deals to find the opening deal (DEAL_ENTRY_IN) for this position
+   if((magic == 0 || StringLen(commt) == 0) && posId > 0)
+   {
+      int dealsTotal = HistoryDealsTotal();
+      for(int d = 0; d < dealsTotal; d++)
+      {
+         ulong dt = HistoryDealGetTicket(d);
+         if(dt == 0) continue;
+         if((long)HistoryDealGetInteger(dt, DEAL_POSITION_ID) == posId)
+         {
+            long ent = HistoryDealGetInteger(dt, DEAL_ENTRY);
+            if(ent == DEAL_ENTRY_IN)
+            {
+               if(magic == 0) magic = HistoryDealGetInteger(dt, DEAL_MAGIC);
+               if(StringLen(commt) == 0) commt = HistoryDealGetString(dt, DEAL_COMMENT);
+               break;
+            }
+         }
+      }
+   }
+
+   // 4. Optional custom EA name fallback
+   if(StringLen(commt) == 0 && StringLen(InpCustomEaName) > 0)
+      commt = InpCustomEaName;
 
    // Extract Exit Reason
    int reasonCode = (int)HistoryDealGetInteger(ticket, DEAL_REASON);
