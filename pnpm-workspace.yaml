@@ -6,8 +6,6 @@ allowBuilds:
   esbuild: true
   better-sqlite3: true
   electron: false
-ignoredOptionalDependencies:
-  - sharp
 minimumReleaseAgeExclude:
   - "@ai-sdk/openai@4.0.64"
   - "@ai-sdk/provider-utils@5.0.38"
