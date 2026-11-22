@@ -257,7 +257,7 @@ export const POST = handler(
       const matchingTrade = openTrades.find((t) => {
         const matchTicket = pos.ticket && t.executionIdsJson && t.executionIdsJson.includes(String(pos.ticket));
         const matchSymbol = t.symbol.toUpperCase() === pos.symbol.toUpperCase();
-        const matchSide = t.direction === pos.side;
+        const matchSide = (t.direction === "long" && pos.side === "buy") || (t.direction === "short" && pos.side === "sell");
         return matchTicket || (matchSymbol && matchSide);
       });
 

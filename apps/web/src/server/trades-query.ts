@@ -135,7 +135,7 @@ export const queryTrades = async (
           const match = positions.find((p) => {
             const ticketMatch = p.ticket && row.executionIdsJson && row.executionIdsJson.includes(String(p.ticket));
             const symbolMatch = p.symbol && row.symbol.toUpperCase() === p.symbol.toUpperCase();
-            const sideMatch = p.side && row.direction === p.side;
+            const sideMatch = (row.direction === "long" && p.side === "buy") || (row.direction === "short" && p.side === "sell");
             return ticketMatch || (symbolMatch && sideMatch);
           });
           if (match && typeof match.profit === "number") {
