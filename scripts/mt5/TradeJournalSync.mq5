@@ -44,6 +44,7 @@ input int               InpScreenshotHeight= 450;                               
 //--- Global Variables
 datetime g_last_synced_time  = 0;
 int      g_total_deals_synced= 0;
+int      g_last_history_total= 0;
 string   g_sync_status       = "Initializing...";
 color    g_status_color      = clrYellow;
 
@@ -281,6 +282,8 @@ bool SendJsonToJournal(string jsonPayload, string &responseOut)
       ArrayResize(postData, dataLen - 1);
 
    string headers = "Content-Type: application/json\r\n";
+   headers += "Accept: application/json\r\n";
+   headers += "User-Agent: PrinceAlgo-TradeJournalSync/3.00\r\n";
    if(StringLen(InpApiKey) > 0)
       headers += "x-api-key: " + InpApiKey + "\r\n";
 
@@ -289,7 +292,7 @@ bool SendJsonToJournal(string jsonPayload, string &responseOut)
       "POST",
       InpApiUrl,
       headers,
-      15000,
+      30000,
       postData,
       resultData,
       resultHeaders
@@ -656,6 +659,7 @@ int SyncHistoryBatched(datetime fromTime, datetime toTime)
    UpdateDashboard();
 
    PrintFormat("🎉 [TradeJournalSync] History sync complete! Total: %d deals", syncedCount);
+   g_last_history_total = totalDeals;
    return syncedCount;
 }
 
@@ -872,8 +876,6 @@ void OnTradeTransaction(
 //+------------------------------------------------------------------+
 void OnTimer()
 {
-   // Use configured sync scope (e.g. past days / all history) so even if database was empty,
-   // MT5 continuously restores and syncs all deals automatically every heartbeat!
    datetime fromTime = 0;
    if(InpSyncScope == SYNC_ALL_HISTORY)
       fromTime = 0;
@@ -882,46 +884,46 @@ void OnTimer()
    else if(InpSyncScope == SYNC_FROM_DATE)
       fromTime = InpSyncStartDate;
 
+   string payload = "{";
+   if(StringLen(InpApiKey) > 0)
+      payload += "\"apiKey\":\"" + EscapeJson(InpApiKey) + "\",";
+   payload += BuildAccountJson(fromTime, TimeCurrent() + 86400);
+
+   string executionsJson = "";
+   int newDealsCount = 0;
+
    if(HistorySelect(fromTime, TimeCurrent() + 86400))
    {
       int total = HistoryDealsTotal();
-      // Scan up to 100 most recent trading deals in heartbeat to keep network lightweight
-      int scanLimit = MathMin(total, 100);
-      int startIdx = MathMax(0, total - scanLimit);
-
-      ulong tickets[];
-      ArrayResize(tickets, total - startIdx);
-      int tCount = 0;
-      for(int i = startIdx; i < total; i++)
+      if(total != g_last_history_total)
       {
-         tickets[tCount] = HistoryDealGetTicket(i);
-         tCount++;
-      }
+         int scanLimit = MathMin(total, 50);
+         int startIdx = MathMax(0, total - scanLimit);
 
-      string executionsJson = "";
-      int count = 0;
-
-      for(int i = 0; i < tCount; i++)
-      {
-         if(tickets[i] == 0) continue;
-         string dealJson = BuildDealJson(tickets[i]);
-         if(StringLen(dealJson) > 0)
+         for(int i = startIdx; i < total; i++)
          {
-            if(count > 0) executionsJson += ",";
-            executionsJson += dealJson;
-            count++;
+            ulong t = HistoryDealGetTicket(i);
+            if(t == 0) continue;
+            string dealJson = BuildDealJson(t);
+            if(StringLen(dealJson) > 0)
+            {
+               if(newDealsCount > 0) executionsJson += ",";
+               executionsJson += dealJson;
+               newDealsCount++;
+            }
          }
+         g_last_history_total = total;
       }
+   }
 
-      string payload = "{";
-      if(StringLen(InpApiKey) > 0)
-         payload += "\"apiKey\":\"" + EscapeJson(InpApiKey) + "\",";
-      payload += BuildAccountJson(fromTime, TimeCurrent() + 86400);
-      payload += ",\"executions\":[" + executionsJson + "]}";
+   payload += ",\"executions\":[" + executionsJson + "]}";
 
-      string resp;
-      SendJsonToJournal(payload, resp);
+   string resp;
+   if(SendJsonToJournal(payload, resp))
+   {
       g_last_synced_time = TimeCurrent();
+      if(newDealsCount > 0)
+         g_total_deals_synced += newDealsCount;
    }
    UpdateDashboard();
 }

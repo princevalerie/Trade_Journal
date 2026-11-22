@@ -240,6 +240,8 @@ bool SendJsonToJournal(string jsonPayload, string &responseOut)
       ArrayResize(postData, dataLen - 1);
 
    string headers = "Content-Type: application/json\r\n";
+   headers += "Accept: application/json\r\n";
+   headers += "User-Agent: PrinceAlgo-TradeJournalSync/3.00\r\n";
    if(StringLen(InpApiKey) > 0)
       headers += "x-api-key: " + InpApiKey + "\r\n";
 
@@ -248,7 +250,7 @@ bool SendJsonToJournal(string jsonPayload, string &responseOut)
       "POST",
       InpApiUrl,
       headers,
-      15000,
+      30000,
       postData,
       resultData,
       resultHeaders
