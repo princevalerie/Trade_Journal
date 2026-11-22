@@ -30,11 +30,20 @@ export const runAi = async (prompt: string, maxOutputTokens = 1200): Promise<str
   const model = await getAiModel(provider);
   try {
     const selectedModel =
-      provider === "gemini"
-        ? createGoogleGenerativeAI({ apiKey })(model)
-        : provider === "openai"
-          ? createOpenAI({ apiKey }).responses(model)
-          : createAnthropic({ apiKey })(model);
+      provider === "openrouter"
+        ? createOpenAI({
+            baseURL: "https://openrouter.ai/api/v1",
+            apiKey,
+            headers: {
+              "HTTP-Referer": "https://github.com/princevalerie/Trade_Journal",
+              "X-Title": "Trade Journal",
+            },
+          })(model)
+        : provider === "gemini"
+          ? createGoogleGenerativeAI({ apiKey })(model)
+          : provider === "openai"
+            ? createOpenAI({ apiKey }).responses(model)
+            : createAnthropic({ apiKey })(model);
 
     const result = await generateText({
       model: selectedModel as any,

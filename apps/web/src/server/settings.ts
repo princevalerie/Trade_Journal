@@ -52,6 +52,7 @@ export const getMultipliers = async (): Promise<Record<string, number>> => {
 };
 
 export const aiKeyEnvironment = (provider: AiProvider): string | null => {
+  if (provider === "openrouter") return process.env.OPENROUTER_API_KEY?.trim() || null;
   if (provider === "openai") return process.env.OPENAI_API_KEY?.trim() || null;
   if (provider === "gemini")
     return (process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY)?.trim() || null;
@@ -83,13 +84,21 @@ export const setAnthropicKey = async (key: string | null): Promise<void> => awai
 export const getAiProvider = async (): Promise<AiProvider> => {
   const selected = await getSetting("aiProvider");
   if (isAiProvider(selected)) return selected;
+  if (await getAiKey("openrouter")) return "openrouter";
   if (await getAiKey("gemini")) return "gemini";
   if (await getAiKey("openai")) return "openai";
-  return "anthropic";
+  if (await getAiKey("anthropic")) return "anthropic";
+  return "openrouter";
 };
 
 export const aiModelSetting = (provider: AiProvider): string =>
-  provider === "anthropic" ? "aiModel" : provider === "gemini" ? "geminiModel" : "openaiModel";
+  provider === "openrouter"
+    ? "openrouterModel"
+    : provider === "anthropic"
+      ? "aiModel"
+      : provider === "gemini"
+        ? "geminiModel"
+        : "openaiModel";
 
 export const getAiModel = async (provider: AiProvider): Promise<string> =>
   (await getSetting(aiModelSetting(provider)))?.trim() || AI_DEFAULT_MODELS[provider];
@@ -106,6 +115,7 @@ export const getAiSettings = async (): Promise<AiSettingsPayload> => {
     model: await getAiModel(provider),
   });
   const aiConnections = {
+    openrouter: await connection("openrouter"),
     anthropic: await connection("anthropic"),
     openai: await connection("openai"),
     gemini: await connection("gemini"),

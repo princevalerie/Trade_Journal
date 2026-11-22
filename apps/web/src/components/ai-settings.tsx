@@ -17,8 +17,8 @@ import { OptionSelect } from "./ui/option-select";
 
 export function AiSettings() {
   const { data, error, loading, refresh } = useApi<AiSettingsPayload>("/api/settings");
-  const [provider, setProvider] = useState<AiProvider>("anthropic");
-  const [model, setModel] = useState(AI_DEFAULT_MODELS.anthropic);
+  const [provider, setProvider] = useState<AiProvider>("openrouter");
+  const [model, setModel] = useState(AI_DEFAULT_MODELS.openrouter);
   const [apiKey, setApiKey] = useState("");
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState("");
@@ -31,7 +31,7 @@ export function AiSettings() {
 
   const fetchAvailableModels = async (targetProvider: AiProvider = provider, keyOverride = apiKey) => {
     const activeKey = keyOverride.trim() || (apiKeyInputRef.current?.value || "").trim();
-    const hasKey = Boolean(activeKey || data?.aiConnections?.[targetProvider]?.configured);
+    const hasKey = Boolean(activeKey || data?.aiConnections?.[targetProvider]?.configured || targetProvider === "openrouter");
     if (!hasKey) {
       setDetectedModels([]);
       setDetectError("");
@@ -77,7 +77,7 @@ export function AiSettings() {
     if (!data) return;
     if (data.aiProvider) setProvider(data.aiProvider);
     if (data.aiModel) setModel(data.aiModel);
-    if (data.aiProvider && data.aiConnections?.[data.aiProvider]?.configured) {
+    if (data.aiProvider && (data.aiConnections?.[data.aiProvider]?.configured || data.aiProvider === "openrouter")) {
       void fetchAvailableModels(data.aiProvider, "");
     } else {
       setDetectedModels([]);
@@ -127,7 +127,7 @@ export function AiSettings() {
     ]),
   );
 
-  const isConfigured = Boolean(connection?.configured);
+  const isConfigured = Boolean(connection?.configured || provider === "openrouter");
 
   return (
     <Card id="ai-settings" className="scroll-mt-24">
@@ -136,7 +136,7 @@ export function AiSettings() {
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Use Google Gemini, Anthropic, or OpenAI for recaps, trade critiques, and “ask your journal”. Your key is
+          Use OpenRouter (Free), Google Gemini, Anthropic, or OpenAI for recaps, trade critiques, and “ask your journal”. Your key is
           encrypted at rest. AI requests go from your server directly to the provider you select.
         </p>
         {data && data.aiProvider && (
@@ -162,7 +162,7 @@ export function AiSettings() {
                 setDetectedModels([]);
                 setDetectError("");
                 setIsCustomModel(false);
-                if (data?.aiConnections[next]?.configured) {
+                if (data?.aiConnections[next]?.configured || next === "openrouter") {
                   void fetchAvailableModels(next, "");
                 }
               }}
@@ -274,11 +274,13 @@ export function AiSettings() {
             placeholder={
               connection?.configured
                 ? "Key configured"
-                : provider === "gemini"
-                  ? "AIzaSy…"
-                  : provider === "anthropic"
-                    ? "sk-ant-…"
-                    : "sk-…"
+                : provider === "openrouter"
+                  ? "sk-or-v1-…"
+                  : provider === "gemini"
+                    ? "AIzaSy…"
+                    : provider === "anthropic"
+                      ? "sk-ant-…"
+                      : "sk-…"
             }
             autoComplete="off"
             spellCheck={false}
@@ -286,15 +288,19 @@ export function AiSettings() {
           <p className="text-xs text-muted-foreground">
             {environment
               ? `Using ${
-                  provider === "gemini"
-                    ? "GEMINI_API_KEY"
-                    : provider === "openai"
-                      ? "OPENAI_API_KEY"
-                      : "ANTHROPIC_API_KEY"
+                  provider === "openrouter"
+                    ? "OPENROUTER_API_KEY"
+                    : provider === "gemini"
+                      ? "GEMINI_API_KEY"
+                      : provider === "openai"
+                        ? "OPENAI_API_KEY"
+                        : "ANTHROPIC_API_KEY"
                 } from the server environment. Change or remove that variable on the server to update the key.`
               : connection?.configured
                 ? "Key sudah tersimpan. Biarkan kosong jika tidak ingin mengubah key, atau masukkan key baru untuk mengganti."
-                : "Masukkan API key Anda lalu klik Save untuk memuat daftar model yang tersedia."}
+                : provider === "openrouter"
+                  ? "Daftar model gratis otomatis termuat dari OpenRouter. Masukkan OpenRouter API key Anda untuk mulai menggunakan AI reflection."
+                  : "Masukkan API key Anda lalu klik Save untuk memuat daftar model yang tersedia."}
           </p>
         </div>
         {(error || failure) && (

@@ -41,7 +41,7 @@ export const PATCH = handler(async (request: Request) => {
   const body = (await request.json()) as SettingsBody;
   requireValue(body && typeof body === "object" && !Array.isArray(body), "Enter valid settings.");
   if (body.aiProvider !== undefined)
-    requireValue(isAiProvider(body.aiProvider), "Choose Google Gemini, Anthropic, or OpenAI.");
+    requireValue(isAiProvider(body.aiProvider), "Choose OpenRouter, Google Gemini, Anthropic, or OpenAI.");
   const provider = body.aiProvider ?? (await getAiProvider());
   if (body.aiModel !== undefined)
     requireValue(
@@ -98,7 +98,7 @@ export const PATCH = handler(async (request: Request) => {
 
   for (const id of AI_PROVIDERS) {
     const key = body[`${id}Key`];
-    if (key !== undefined) await setAiKey(id, key);
+    if (key !== undefined) await setAiKey(id, (key as string | null) ?? null);
   }
   if (body.aiProvider !== undefined) await setSetting("aiProvider", body.aiProvider);
   if (body.aiModel !== undefined) await setSetting(aiModelSetting(provider), body.aiModel.trim());

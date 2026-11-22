@@ -1,16 +1,18 @@
-export const AI_PROVIDERS = ["anthropic", "openai", "gemini"] as const;
+export const AI_PROVIDERS = ["openrouter", "gemini", "openai", "anthropic"] as const;
 export type AiProvider = (typeof AI_PROVIDERS)[number];
 
 export const AI_DEFAULT_MODELS: Record<AiProvider, string> = {
-  anthropic: "claude-opus-5",
-  openai: "gpt-4.1-mini",
+  openrouter: "openrouter/free",
   gemini: "gemini-2.5-flash",
+  openai: "gpt-4.1-mini",
+  anthropic: "claude-opus-5",
 };
 
 export const AI_PROVIDER_NAMES: Record<AiProvider, string> = {
-  anthropic: "Anthropic",
-  openai: "OpenAI",
+  openrouter: "OpenRouter (Free)",
   gemini: "Google Gemini",
+  openai: "OpenAI",
+  anthropic: "Anthropic",
 };
 
 export interface AiConnection {
@@ -27,4 +29,4 @@ export interface AiSettingsPayload {
 }
 
 export const isAiProvider = (value: unknown): value is AiProvider =>
-  value === "anthropic" || value === "openai" || value === "gemini";
+  value === "openrouter" || value === "anthropic" || value === "openai" || value === "gemini";
