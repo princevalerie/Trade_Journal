@@ -45,6 +45,7 @@ function Accounts() {
   const { data, refresh } = useApi<{ accounts: AccountRow[] }>("/api/accounts");
   const [syncing, setSyncing] = useState<string | null>(null);
   const [refreshingAll, setRefreshingAll] = useState(false);
+  const [resettingDb, setResettingDb] = useState(false);
 
   const action = async <T = unknown,>(id: string, body: Record<string, unknown>) => {
     const result = await postJson<T>(`/api/accounts/${id}/actions`, body);
@@ -92,6 +93,24 @@ function Accounts() {
     }
   };
 
+  const resetDatabase = async () => {
+    const confirmed = confirm(
+      "PERINGATAN: Tindakan ini akan MENGHAPUS SEMUA DATA di database Turso (seluruh akun, trades, riwayat, catatan, dan log)!\n\nDatabase akan kembali bersih/kosong. Tindakan ini TIDAK DAPAT dibatalkan.\n\nApakah Anda yakin ingin mereset seluruh database?",
+    );
+    if (!confirmed) return;
+
+    setResettingDb(true);
+    try {
+      await postJson("/api/database/reset", {});
+      alert("✅ Seluruh isi database Turso berhasil direset.");
+      refresh();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Gagal mereset database");
+    } finally {
+      setResettingDb(false);
+    }
+  };
+
   const isMt4Mt5 = (account: AccountRow) =>
     account.kind === "sync" ||
     /mt4|metatrader 4/i.test(account.broker) ||
@@ -100,16 +119,28 @@ function Accounts() {
   return (
     <div>
       <FilterBar title="Accounts" />
-      <div className="flex flex-wrap items-center gap-2 px-4 pb-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 pb-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={refreshingAll || resettingDb}
+            onClick={() => void refreshAll()}
+            className="gap-1.5"
+          >
+            <RotateCcw className={refreshingAll ? "animate-spin" : undefined} size={14} />
+            {refreshingAll ? "Refreshing All..." : "Refresh All MT4/MT5"}
+          </Button>
+        </div>
         <Button
           variant="outline"
           size="sm"
-          disabled={refreshingAll}
-          onClick={() => void refreshAll()}
-          className="gap-1.5"
+          disabled={resettingDb || refreshingAll}
+          onClick={() => void resetDatabase()}
+          className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10"
         >
-          <RotateCcw className={refreshingAll ? "animate-spin" : undefined} size={14} />
-          {refreshingAll ? "Refreshing All..." : "Refresh All MT4/MT5"}
+          <Trash2 className={resettingDb ? "animate-spin" : undefined} size={14} />
+          {resettingDb ? "Resetting Database..." : "Reset Database (Turso)"}
         </Button>
       </div>
       <div className="grid gap-3 p-4 md:grid-cols-2">

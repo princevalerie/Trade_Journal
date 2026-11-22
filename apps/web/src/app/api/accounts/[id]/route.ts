@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { accounts, db, executions, trades } from "@/db";
+import { accounts, db, executions, trades, propAccounts, tradeExcursions, tradeRuleChecks } from "@/db";
 import { bad, handler, ok } from "@/server/api";
 import { rebuildAccount } from "@/server/rebuild";
 
@@ -40,10 +40,20 @@ export const PATCH = handler(async (request: Request, { params }: Params) => {
 
 export const DELETE = handler(async (_request: Request, { params }: Params) => {
   const { id } = await params;
-  await db.transaction(async (tx) => {
-    await tx.delete(trades).where(eq(trades.accountId, id)).run();
-    await tx.delete(executions).where(eq(executions.accountId, id)).run();
-    await tx.delete(accounts).where(eq(accounts.id, id)).run();
-  });
+
+  // Unlink any prop accounts referencing this journal account
+  await db.update(propAccounts).set({ journalAccountId: null }).where(eq(propAccounts.journalAccountId, id)).run();
+
+  // Find all trade keys for this account to clean up dependent child records
+  const accountTrades = await db.select({ key: trades.key }).from(trades).where(eq(trades.accountId, id)).all();
+  for (const t of accountTrades) {
+    await db.delete(tradeExcursions).where(eq(tradeExcursions.tradeKey, t.key)).run();
+    await db.delete(tradeRuleChecks).where(eq(tradeRuleChecks.tradeKey, t.key)).run();
+  }
+
+  await db.delete(trades).where(eq(trades.accountId, id)).run();
+  await db.delete(executions).where(eq(executions.accountId, id)).run();
+  await db.delete(accounts).where(eq(accounts.id, id)).run();
+
   return ok({ deleted: true });
 });
