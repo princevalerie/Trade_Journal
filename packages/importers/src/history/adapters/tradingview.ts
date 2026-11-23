@@ -93,7 +93,7 @@ export const tradingViewAdapter: SourceAdapter = {
       confidence: "exact",
       signals: [
         `header carries "${table.header[columns.tradeId]!.trim()}", "${table.header[columns.type]!.trim()}", ` +
-          `and "${table.header[columns.time]!.trim()}" columns`,
+        `and "${table.header[columns.time]!.trim()}" columns`,
         'rows are paired "Entry long/short" / "Exit long/short" events sharing a trade number',
       ],
     };

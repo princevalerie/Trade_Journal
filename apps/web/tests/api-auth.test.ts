@@ -27,15 +27,15 @@ describe("optional journal password protection", () => {
   });
   it("accepts signed sessions and invalidates them when the password changes", async () => {
     vi.stubEnv("JOURNAL_PASSWORD", "test-password");
-    session.token = sessionToken();
+    session.token = await sessionToken();
     expect((await handler(() => ok({ data: true }))()).status).toBe(200);
     vi.stubEnv("JOURNAL_PASSWORD", "new-password");
     expect((await handler(() => ok({ data: true }))()).status).toBe(401);
   });
   it("allows the login endpoint to verify a password without a session", async () => {
     vi.stubEnv("JOURNAL_PASSWORD", "test-password");
-    expect(verifyPassword("test-password")).toBe(true);
-    expect(verifyPassword("wrong-password")).toBe(false);
+    expect(await verifyPassword("test-password")).toBe(true);
+    expect(await verifyPassword("wrong-password")).toBe(false);
     expect((await handler(() => ok({ login: true }), { public: true })()).status).toBe(200);
   });
 });

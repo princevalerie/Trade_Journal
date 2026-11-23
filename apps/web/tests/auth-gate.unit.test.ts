@@ -28,7 +28,7 @@ describe("optional password protection", () => {
 
   it("the real session cookie is accepted", async () => {
     process.env.JOURNAL_PASSWORD = "correct-horse";
-    cookieValue = sessionToken();
+    cookieValue = await sessionToken();
     expect((await route()).status).toBe(200);
   });
 

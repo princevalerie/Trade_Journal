@@ -26,7 +26,7 @@ export const handler =
     try {
       if (!options.public && passwordConfigured()) {
         const token = (await cookies()).get(AUTH_COOKIE)?.value;
-        if (!verifySession(token)) return bad("Unauthorized", 401);
+        if (!(await verifySession(token))) return bad("Unauthorized", 401);
       }
       return await fn(...args);
     } catch (error) {
