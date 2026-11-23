@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,18 +9,24 @@ import { ValburyMark } from "@/components/valbury-mark";
 import { postJson } from "@/lib/use-api";
 
 export default function LoginPage() {
-  const router = useRouter();
+  const searchParams = useSearchParams();
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
+    setBusy(true);
+    setError(null);
     try {
       await postJson("/api/auth", { password });
-      router.push("/");
-      router.refresh();
+      // Hard navigation so the Shell re-mounts with fresh auth state.
+      // router.push + router.refresh leaves stale useApi cache.
+      const redirect = searchParams.get("redirect") || "/";
+      window.location.href = redirect;
     } catch {
       setError("Wrong password");
+      setBusy(false);
     }
   };
 
@@ -39,10 +45,11 @@ export default function LoginPage() {
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Password"
               autoFocus
+              disabled={busy}
             />
             {error && <p className="text-center text-xs text-loss">{error}</p>}
-            <Button type="submit" className="w-full">
-              Unlock
+            <Button type="submit" className="w-full" disabled={busy}>
+              {busy ? "Signing in…" : "Unlock"}
             </Button>
           </form>
         </CardContent>
