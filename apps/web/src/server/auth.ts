@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Single-user auth, optional by design: it'"'"'s your journal on your box. Set
  * JOURNAL_PASSWORD to require a login; the session cookie is an HMAC of the
  * password so rotating the password invalidates sessions.
